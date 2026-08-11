@@ -10,7 +10,7 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
 
         if instance.role == CustomUser.Role.CANDIDATE:
-            CandidateProfile.objects.create(user=instance,full_name=instance.username)
+            CandidateProfile.objects.create(user=instance,full_name=instance.username,phone=instance.phone)
 
         elif instance.role == CustomUser.Role.EMPLOYER:
             EmployerProfile.objects.create(user=instance,company_name=instance.username)  
