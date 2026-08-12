@@ -11,3 +11,12 @@ class IsEmployer(BasePermission):
 class IsCandidate(BasePermission):
     def has_permission(self, request, view):
         return (request.user.is_authenticated and request.user.role=="CANDIDATE")
+
+class IsCandidateOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return(request.user.is_authenticated and request.user.role in ["CANDIDATE","ADMIN"])
+
+class IsEmployerOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return(request.user.is_authenticated and request.user.role in ["EMPLOYER","ADMIN"])
+    
