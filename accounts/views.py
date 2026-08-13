@@ -123,29 +123,72 @@ class CandidateProfileView(APIView):
             user_id = request.query_params.get("user_id")
 
             if not user_id:
-                return Response({"detail": "user_id is required for admin."},status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                {"detail": "user_id is required for admin."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
             try:
-                profile = CandidateProfile.objects.get(user_id=user_id,is_deleted=False)
+                profile = CandidateProfile.objects.get(
+                user_id=user_id,
+                is_deleted=False
+            )
 
             except CandidateProfile.DoesNotExist:
-                return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                {"detail": "Candidate profile not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         else:
             try:
-                profile = CandidateProfile.objects.get(user=request.user,is_deleted=False)
+                profile = CandidateProfile.objects.get(
+                user=request.user,
+                is_deleted=False
+            )
 
             except CandidateProfile.DoesNotExist:
-                return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
+                 return Response(
+                {"detail": "Candidate profile not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        serializer = CandidateProfileSerializer(profile,data=request.data)
+        old_resume_name = profile.resume.name if profile.resume else None
+
+        serializer = CandidateProfileSerializer(
+        profile,
+        data=request.data
+    )
 
         if serializer.is_valid():
-            serializer.save()
+            updated_profile = serializer.save()
 
-            return Response(serializer.data, status=status.HTTP_200_OK )
+        
+            if "resume" in request.FILES and old_resume_name:
+                if old_resume_name != updated_profile.resume.name:
+                    old_resume_path = profile.resume.storage.path(
+                    old_resume_name
+                )
 
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+                    if old_resume_path:
+                        import os
+
+                        if os.path.exists(old_resume_path):
+                            os.remove(old_resume_path)
+
+            response_serializer = CandidateProfileSerializer(
+            updated_profile
+        )
+
+            return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+        return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
 
     def delete(self,request):
         try:

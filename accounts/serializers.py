@@ -37,11 +37,24 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Full name cannot be empty.")
 
         return value
+
+    def validate_resume(self,value):
+        allowed_extensions=[".pdf",".doc",".docx"]
+        file_name=value.name.lower()
+        if not any(file_name.endswith(ext) for ext in allowed_extensions):
+            raise serializers.ValidationError("only pdf,doc,docx files are allowed")
+
+        max_size=5*1024*1024
+        if value.size>max_size:
+            raise serializers.ValidationError("size should below 5 mb")
+
+        return value
     
     class Meta:
         model=CandidateProfile
-        fields="id","full_name","phone","skills","education","experience","expected_salary","is_deleted",
+        fields="id","full_name","phone","skills","education","experience","expected_salary","resume","is_deleted",
         read_only_fields="id","is_deleted"
+
 
 class EmployerProfileSerializer(serializers.ModelSerializer):
     def validate_company_name(self, value):
