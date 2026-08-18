@@ -15,6 +15,8 @@ from .pagination import CandidatePagination
 
 from django.db.models import Q
 
+from .services import get_candidate_profile,get_employer_profile
+
 # Create your views here.
 
 class SignupView(generics.CreateAPIView):
@@ -82,28 +84,16 @@ class CandidateProfileView(APIView):
 
     def get(self, request):
 
-        if request.user.role == "ADMIN":
-            user_id = request.query_params.get("user_id")
+        user_id = request.query_params.get("user_id")
+        profile,error=get_candidate_profile(request.user,user_id)
+        if error:
+            if error=="user id required for admin":
+                return Response({"detail":error},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail":error},status=status.HTTP_404_NOT_FOUND)
 
-            if not user_id:
-                return Response({"detail": "user_id is required for admin."},status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                profile = CandidateProfile.objects.get(user_id=user_id,is_deleted=False)
-
-            except CandidateProfile.DoesNotExist:
-                return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
-
-        else:
-            try:
-                profile = CandidateProfile.objects.get(user=request.user,is_deleted=False
-                                                       )
-            except CandidateProfile.DoesNotExist:
-                return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
-
-        serializer = CandidateProfileSerializer(profile)
-
+        serializer=CandidateProfileSerializer(profile)
         return Response(serializer.data,status=status.HTTP_200_OK)
+    
 
     def put(self, request):
 
@@ -178,27 +168,14 @@ class EmployerProfileView(APIView):
 
     def get(self, request):
 
-        if request.user.role == "ADMIN":
-            user_id = request.query_params.get("user_id")
-
-            if not user_id:
-                return Response({"detail": "user_id is required for admin."},status=status.HTTP_400_BAD_REQUEST)
-
-            try:
-                profile = EmployerProfile.objects.get(user_id=user_id,is_deleted=False )
-
-            except EmployerProfile.DoesNotExist:
-                return Response({"detail": "Employer profile not found."},status=status.HTTP_404_NOT_FOUND)
-
-        else:
-            try:
-                profile = EmployerProfile.objects.get(user=request.user,is_deleted=False)
-
-            except EmployerProfile.DoesNotExist:
-                return Response({"detail": "Employer profile not found."},status=status.HTTP_404_NOT_FOUND)
-
-        serializer = EmployerProfileSerializer(profile)
-
+        user_id = request.query_params.get("user_id")
+        profile,error=get_employer_profile(request.user,user_id)
+        if error:
+            if error=="user id required for admin":
+                return Response({"detail":error},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail":error},status=status.HTTP_404_NOT_FOUND)
+        
+        serializer=EmployerProfileSerializer(profile)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
     def put(self, request):
