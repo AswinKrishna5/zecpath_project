@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,CandidateProfile,EmployerProfile
+from .models import CustomUser,CandidateProfile,EmployerProfile,Job
 
 class SignupSerializers(serializers.ModelSerializer):
     class Meta:
@@ -75,3 +75,9 @@ class EmployerProfileSerializer(serializers.ModelSerializer):
         model=EmployerProfile
         fields="id","company_name","location","domain","company_size","is_verified","is_deleted",
         read_only_fields="id","is_verified","is_deleted"
+
+class JobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Job
+        fields="id","title","description","skills","experience","salary_min","salary_max","location","job_type","status","created_at","updated_at"
+        read_only_fields="id","status","created_at","updated_at"

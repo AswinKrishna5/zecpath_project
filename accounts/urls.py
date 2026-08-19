@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestView,CandidateTestView,CandidateProfileView,EmployerProfileView,CandidateListView
+from .views import SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestView,CandidateTestView,CandidateProfileView,EmployerProfileView,CandidateListView,EmployerJobView
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -16,4 +16,6 @@ urlpatterns =[
     path("candidate-profile/",CandidateProfileView.as_view(),name="candidate_profile"),
     path("employer-profile/",EmployerProfileView.as_view(),name="employer_profile"),
     path("candidates/",CandidateListView.as_view(),name="candidate_list"),
+    path("employer-jobs/",EmployerJobView.as_view(),name="employer_jobsl"),
+    path("employer-jobs/<int:job_id>/",EmployerJobView.as_view(),name="employer_jobs_deatail"),
 ]

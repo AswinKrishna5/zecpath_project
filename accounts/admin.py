@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import CustomUser, CandidateProfile, EmployerProfile
+from .models import CustomUser, CandidateProfile, EmployerProfile,Job
 
 
 @admin.register(CustomUser)
@@ -96,4 +96,24 @@ class EmployerProfileAdmin(admin.ModelAdmin):
         "company_name",
         "user",
         "location",
+        
+    )
+
+
+@admin.register(Job)
+class JobAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "employer",
+        "title",
+        "description",
+        "location",
+        "skills",
+        "experience",
+        "salary_min",
+        "salary_max",
+        "status",
+        "job_type",
+        "created_at",
+        "updated_at"
     )

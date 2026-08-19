@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer
+from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CandidateProfile,EmployerProfile
+from .models import CandidateProfile,EmployerProfile,Job
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -238,3 +238,58 @@ class CandidateListView(APIView):
         pagianted_candidates=paginator.paginate_queryset(candidates,request)
         serializer=CandidateProfileSerializer(pagianted_candidates,many=True)
         return paginator.get_paginated_response(serializer.data)
+
+class EmployerJobView(APIView):
+    permission_classes=[IsEmployer]
+
+    def post(self,request):
+        try:
+            employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer profile does not found"},status=status.HTTP_404_NOT_FOUND)
+
+        serializer=JobSerializer(data=request.data)
+        if serializer.is_valid():
+            job=serializer.save(employer=employer_profile)
+            response_serializer=JobSerializer(job)
+            return Response(response_serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self,request,job_id):
+        try:
+            employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer profile no found"},status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            job=Job.objects.get(id=job_id,employer=employer_profile)
+        except Job.DoesNotExist:
+            return Response({"detail":"job not found or you do not own this job"},status=status.HTTP_404_NOT_FOUND)
+
+        serializer=JobSerializer(job,data=request.data)
+        if serializer.is_valid():
+            updated_job=serializer.save()
+            return Response(JobSerializer(updated_job).data,status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self,request,job_id):
+        try:
+            employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
+        except EmployerProfile.DoesNotExist:
+            return Response({"deatil":"employer is not found"},status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            job=Job.objects.get(id=job_id,employer=employer_profile)
+        except Job.DoesNotExist:
+            return Response({"detail":"job is not found or you do not own this job"},status=status.HTTP_404_NOT_FOUND)
+
+        new_status=request.data.get("status")
+        if new_status not in ["ACTIVE","INACTIVE"]:
+            return Response({"detail": "Status must be ACTIVE or INACTIVE."},status=status.HTTP_400_BAD_REQUEST)
+        job.status=new_status
+        job.save()
+
+        return Response({"deatil":"job status updated sucessfully","status":job.status},status=status.HTTP_200_OK)
+    
+        
+

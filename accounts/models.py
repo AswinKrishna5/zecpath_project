@@ -55,3 +55,30 @@ class EmployerProfile(models.Model):
 
     def __str__(self):
         return self.company_name
+
+class Job(models.Model):
+    employer=models.ForeignKey(EmployerProfile,on_delete=models.CASCADE,related_name="jobs")
+    title=models.CharField(max_length=200)
+    description=models.TextField()
+    skills=models.TextField()
+    experience=models.CharField(max_length=100)
+    salary_min=models.DecimalField(max_digits=10,decimal_places=2)
+    salary_max=models.DecimalField(max_digits=10,decimal_places=2)
+    location=models.CharField(max_length=200)
+
+    class JobType(models.TextChoices):
+        FULL_TIME="FULL_TIME","full time"
+        PART_TIME = "PART_TIME", "Part Time"
+        CONTRACT = "CONTRACT", "Contract"
+        INTERNSHIP = "INTERNSHIP", "Internship"
+
+    job_type=models.CharField(max_length=20,choices=JobType.choices)
+
+    class Status(models.TextChoices):
+        ACTIVE="ACTIVE","active"
+        INACTIVE="INACTIVE","inactive"
+
+    status=models.CharField(max_length=20,choices=Status.choices,default=Status.ACTIVE)
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+    
