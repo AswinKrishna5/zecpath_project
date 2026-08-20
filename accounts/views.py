@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import IsAdmin,IsEmployer,IsCandidate,IsCandidateOrAdmin,IsEmployerOrAdmin
 
-from .pagination import CandidatePagination
+from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q
 
@@ -291,5 +291,41 @@ class EmployerJobView(APIView):
 
         return Response({"deatil":"job status updated sucessfully","status":job.status},status=status.HTTP_200_OK)
     
-        
+
+class PublicJobListView(APIView):
+    def get(self,request):
+        jobs=Job.objects.filter(status="ACTIVE").order_by("-created_at")
+        skill=request.query_params.get("skill")
+        if skill:
+            jobs=jobs.filter(skills__icontains=skill)
+        experience=request.query_params.get("experience")
+        if experience:
+            jobs=jobs.filter(experience__icontains=experience)
+        salary_min=request.query_params.get("salary_min")
+        if salary_min:
+            jobs=jobs.filter(salary_max__gte=salary_min)
+        location=request.query_params.get("location")
+        if location:
+            jobs=jobs.filter(location__icontains=location)
+        job_type=request.query_params.get("job_type")
+        if job_type:
+            jobs=jobs.filter(job_type__icontains=job_type)
+        search = request.query_params.get("search")
+        if search:
+            jobs = jobs.filter(Q(title__icontains=search) |Q(description__icontains=search) |Q(skills__icontains=search) |Q(location__icontains=search)
+    )
+        paginator=JobPagination()
+        page=paginator.paginate_queryset(jobs,request)
+        serializer=JobSerializer(page,many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class LatestJobListView(APIView):
+    def get(self,request):
+        jobs=Job.objects.filter(status="ACTIVE").order_by("-created_at")
+        paginator=JobPagination()
+        page=paginator.paginate_queryset(jobs,request)
+        serializer=JobSerializer(page,many=True)
+        return paginator.get_paginated_response(serializer.data)    
+            
 

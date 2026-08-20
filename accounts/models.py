@@ -81,4 +81,6 @@ class Job(models.Model):
     status=models.CharField(max_length=20,choices=Status.choices,default=Status.ACTIVE)
     created_at=models.DateTimeField(auto_now_add=True)
     updated_at=models.DateTimeField(auto_now=True)
-    
+
+    class Meta:
+        indexes=models.Index(fields=["status"]),models.Index(fields=["location"]),models.Index(fields=["job_type"]),models.Index(fields=["created_at"]),

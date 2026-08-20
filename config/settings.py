@@ -49,6 +49,8 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "EXCEPTION_HANDLER": "accounts.exception_handler.custom_exception_handler",
+
+    
 }
 
 MIDDLEWARE = [
