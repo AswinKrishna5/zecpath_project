@@ -84,3 +84,22 @@ class Job(models.Model):
 
     class Meta:
         indexes=models.Index(fields=["status"]),models.Index(fields=["location"]),models.Index(fields=["job_type"]),models.Index(fields=["created_at"]),
+
+
+class Application(models.Model):
+    candidate=models.ForeignKey(CandidateProfile,on_delete=models.CASCADE,related_name="applications")
+    job=models.ForeignKey(Job,on_delete=models.CASCADE,related_name="applications")
+    resume_snapshot=models.FileField(upload_to="application_resumes/")
+    class Status(models.TextChoices):
+        APPLIED = "APPLIED", "Applied"
+        SHORTLISTED = "SHORTLISTED", "Shortlisted"
+        INTERVIEW = "INTERVIEW", "Interview"
+        SELECTED = "SELECTED", "Selected"
+        REJECTED = "REJECTED", "Rejected"
+    status=models.CharField(max_length=20,choices=Status.choices,default=Status.APPLIED)
+    applied_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.candidate.full_name}-{self.job.title}"
+    
+

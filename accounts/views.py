@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer
+from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CandidateProfile,EmployerProfile,Job
+from .models import CandidateProfile,EmployerProfile,Job,Application
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -328,4 +328,37 @@ class LatestJobListView(APIView):
         serializer=JobSerializer(page,many=True)
         return paginator.get_paginated_response(serializer.data)    
             
+class ApplyJobView(APIView):
+    permission_classes=[IsAuthenticated]
+    def post(self,request,job_id):
+        if request.user.role !="CANDIDATE":
+            return Response({"deatail":"only candidate can apply for jobs"},status=status.HTTP_403_FORBIDDEN)
+        try:
+            candidate=request.user.candidate_profile
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail":"candidate profile not found"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            job=Job.objects.get(id=job_id)
+        except Job.DoesNotExist:
+            return Response({"detail":"job not found"},status=status.HTTP_404_NOT_FOUND)
+        if job.status !=Job.Status.ACTIVE:
+            return Response({"detail":"this job is not active"},status=status.HTTP_400_BAD_REQUEST)
+        if not candidate.resume:
+            return Response({"detail":"please upload a resume before applying"},status=status.HTTP_400_BAD_REQUEST)
+        if Application.objects.filter(candidate=candidate,job=job).exists():
+            return Response({"detail":"you have already applied for this job"},status=status.HTTP_400_BAD_REQUEST)
+        application=Application.objects.create(candidate=candidate,job=job,resume_snapshot=candidate.resume,status=Application.Status.APPLIED)
+        return Response({"detail":"application submitted successfully"},status=status.HTTP_201_CREATED)
 
+class MyApplicationListView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self,request):
+        if request.user.role != "CANDIDATE":
+            return Response({"detail":"only candidates can view applications "},status=status.HTTP_403_FORBIDDEN)
+        try :
+            candidate=request.user.candidate_profile
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail":"candidate profile does not find"},status=status.HTTP_404_NOT_FOUND)
+        application=Application.objects.filter(candidate=candidate).select_related("job").order_by("-applied_at")
+        serializer=ApplicationSerializer(application,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import CustomUser, CandidateProfile, EmployerProfile,Job
+from .models import CustomUser, CandidateProfile, EmployerProfile,Job,Application
 
 
 @admin.register(CustomUser)
@@ -116,4 +116,16 @@ class JobAdmin(admin.ModelAdmin):
         "job_type",
         "created_at",
         "updated_at"
+    )
+
+@admin.register(Application)
+class ApplictionAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "candidate",
+        "job",
+        "status",
+        "resume_snapshot",
+        "applied_at"
+      
     )
