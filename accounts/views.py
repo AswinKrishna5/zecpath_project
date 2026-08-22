@@ -5,7 +5,7 @@ from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerPr
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CandidateProfile,EmployerProfile,Job,Application
+from .models import CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -16,6 +16,7 @@ from .pagination import CandidatePagination,JobPagination
 from django.db.models import Q
 
 from .services import get_candidate_profile,get_employer_profile
+from .workflow import is_valid_transition
 
 # Create your views here.
 
@@ -362,3 +363,28 @@ class MyApplicationListView(APIView):
         application=Application.objects.filter(candidate=candidate).select_related("job").order_by("-applied_at")
         serializer=ApplicationSerializer(application,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+class EmployerApplicationStatusView(APIView):
+    permission_classes=[IsAuthenticated]
+    def patch(self,request,application_id):
+        if request.user.role !="EMPLOYER":
+            return Response({"detail":"only employer can update application status"},status=status.HTTP_403_FORBIDDEN)
+        try:
+            application=Application.objects.select_related("job","job__employer").get(id=application_id)
+        except Application.DoesNotExist:
+            return Response({"detail":"application not found"},status=status.HTTP_404_NOT_FOUND)
+        if application.job.employer.user !=request.user:
+            return Response({"detail":"you do not have permission to update this application "},status=status.HTTP_403_FORBIDDEN)
+        new_status=request.data.get("status")
+        if not new_status:
+            return Response({"detail":"status is required"},status=status.HTTP_400_BAD_REQUEST)
+        current_status=application.status
+        if not is_valid_transition(current_status,new_status):
+            return Response({"detail":"invalid staus transition "},status=status.HTTP_400_BAD_REQUEST)
+        application.status=new_status
+        application.save(update_fields=["status"])
+        ApplicationAuditLog.objects.create(application=application,actor=request.user,old_status=current_status,new_status=new_status)
+        return Response({"message":"application status updated succesfully","status":application.status},status=status.HTTP_200_OK) 
+           
+        

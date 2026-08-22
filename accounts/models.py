@@ -102,4 +102,12 @@ class Application(models.Model):
     def __str__(self):
         return f"{self.candidate.full_name}-{self.job.title}"
     
+class ApplicationAuditLog(models.Model):
+    application=models.ForeignKey(Application,on_delete=models.CASCADE,related_name="audit_log")
+    actor=models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True)
+    old_status=models.CharField(max_length=20,blank=True,null=True)
+    new_status=models.CharField(max_length=20)
+    creted_at=models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.application.id} - {self.new_status}"
