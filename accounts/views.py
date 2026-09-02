@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer
+from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -243,6 +243,15 @@ class CandidateListView(APIView):
 class EmployerJobView(APIView):
     permission_classes=[IsEmployer]
 
+    def get(self,request):
+        try:
+            employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer is not exist"},status=status.HTTP_404_NOT_FOUND)
+        jobs=Job.objects.filter(employer=employer_profile).order_by("-created_at")
+        serializer=JobSerializer(jobs,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
     def post(self,request):
         try:
             employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
@@ -387,4 +396,55 @@ class EmployerApplicationStatusView(APIView):
         ApplicationAuditLog.objects.create(application=application,actor=request.user,old_status=current_status,new_status=new_status)
         return Response({"message":"application status updated succesfully","status":application.status},status=status.HTTP_200_OK) 
            
+class EmployerApplicationListView(APIView):
+    permission_classes=[IsEmployer]
+
+    def get(self,request,job_id):
+        try:
+            employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer does not exist"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            job=Job.objects.get(id=job_id,employer=employer_profile)
+        except Job.DoesNotExist:
+            return Response({"deatail":"job not found or you do not own this job"},status=status.HTTP_404_NOT_FOUND)
+        application=Application.objects.filter(job=job).select_related("candidate").order_by("-applied_at")
+        status_filter=request.query_params.get("status")
+        if status_filter:
+            if status_filter not in Application.Status.values:
+                return Response({"detail": "Invalid application status."},status=status.HTTP_400_BAD_REQUEST)
+            application=application.filter(status=status_filter)
+        search=request.query_params.get("search")
+        if search:
+            application=application.filter(Q(candidate__full_name__icontains=search)|Q(candidate__skills__icontains=search)|Q(candidate__experience__icontains=search)|Q(candidate__education__icontains=search))
+        serializer=EmployerApplicationSerializer(application,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+class EmployerJobAnalyticsView(APIView):
+    permission_classes=[IsEmployer]
+
+    def get(self,request,job_id):
+        try:
+            employer_profile=EmployerProfile.objects.get(user=request.user,is_deleted=False)
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer profile not found"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            job=Job.objects.get(id=job_id,employer=employer_profile)
+        except Job.DoesNotExist:
+            return Response({"detail":"job not found or you do not own this job"},status=status.HTTP_404_NOT_FOUND)
+        applications=Application.objects.filter(job=job)
+        total_applications=applications.count()
+        applied=applications.filter(status=Application.Status.APPLIED).count()
+        shortlisted=applications.filter(status=Application.Status.SHORTLISTED).count()
+        interview=applications.filter(status=Application.Status.INTERVIEW).count()
+        selected=applications.filter(status=Application.Status.SELECTED).count()
+        rejected=applications.filter(status=Application.Status.REJECTED).count()
+        if total_applications > 0:
+            shortlist_ratio=(shortlisted/total_applications)*100
+        else:
+            shortlist_ratio=0
+
+        return Response({"total_applications":total_applications,"applied": applied,"shortlisted": shortlisted,"interview": interview,
+        "selected": selected,"rejected": rejected,"shortlist_ratio": shortlist_ratio,},status=status.HTTP_200_OK)
+    
         

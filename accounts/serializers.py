@@ -89,3 +89,15 @@ class ApplicationSerializer(serializers.ModelSerializer):
         model=Application
         fields= "id","job","job_title","company","status","applied_at"
         read_only_fields="id","job_title","company","status","applied_at"
+
+class EmployerApplicationSerializer(serializers.ModelSerializer):
+    candidate_name=serializers.CharField(source="candidate.full_name",read_only=True)
+    candidate_skills=serializers.CharField(source="candidate.skills",read_only=True)
+    candidate_education=serializers.CharField(source="candidate.eduacation",read_only=True)
+    candidate_experience=serializers.CharField(source="candidate.experience",read_only=True)
+    expected_salary=serializers.DecimalField(source="candidate.expected_salary",max_digits=10,decimal_places=2,read_only=True)
+    resume=serializers.FileField(source="resume_snapshot",read_only=True)
+    class Meta:
+        model=Application
+        fields= "id","candidate_name","candidate_skills","candidate_education","candidate_experience","expected_salary","resume","status","applied_at"
+        read_only_fields=fields
