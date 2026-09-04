@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer
+from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog
+from .models import CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -342,7 +342,7 @@ class ApplyJobView(APIView):
     permission_classes=[IsAuthenticated]
     def post(self,request,job_id):
         if request.user.role !="CANDIDATE":
-            return Response({"deatail":"only candidate can apply for jobs"},status=status.HTTP_403_FORBIDDEN)
+            return Response({"detail":"only candidate can apply for jobs"},status=status.HTTP_403_FORBIDDEN)
         try:
             candidate=request.user.candidate_profile
         except CandidateProfile.DoesNotExist:
@@ -358,6 +358,7 @@ class ApplyJobView(APIView):
         if Application.objects.filter(candidate=candidate,job=job).exists():
             return Response({"detail":"you have already applied for this job"},status=status.HTTP_400_BAD_REQUEST)
         application=Application.objects.create(candidate=candidate,job=job,resume_snapshot=candidate.resume,status=Application.Status.APPLIED)
+        ApplicationAuditLog.objects.create(application=application,actor=request.user,old_status=None,new_status=Application.Status.APPLIED)
         return Response({"detail":"application submitted successfully"},status=status.HTTP_201_CREATED)
 
 class MyApplicationListView(APIView):
@@ -447,4 +448,98 @@ class EmployerJobAnalyticsView(APIView):
         return Response({"total_applications":total_applications,"applied": applied,"shortlisted": shortlisted,"interview": interview,
         "selected": selected,"rejected": rejected,"shortlist_ratio": shortlist_ratio,},status=status.HTTP_200_OK)
     
+class SaveJobView(APIView):
+    permission_classes=[IsCandidate]
+    
+    def post(self,request,job_id):
+        try :
+            candidate_profile=CandidateProfile.objects.get(user=request.user,is_deleted=False)
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail":"candidate not found"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            job=Job.objects.get(id=job_id,status=Job.Status.ACTIVE)
+        except Job.DoesNotExist:
+            return Response({"detail":"job not found"},status=status.HTTP_404_NOT_FOUND)
+        saved_job,created=SavedJob.objects.get_or_create(candidate=candidate_profile,job=job)
+        if not created:
+            return  Response({"detail":"job is already saved"},status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail":"job saved succesfully"},status=status.HTTP_201_CREATED)
+    def delete(self,request,job_id):
+        try :
+            candidate_profile=CandidateProfile.objects.get(user=request.user,is_deleted=False)
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail":"candidate profile not found"},status=status.HTTP_404_NOT_FOUND)
+        deleted_count,_=SavedJob.objects.filter(candidate=candidate_profile,job_id=job_id).delete()
+        if deleted_count==0:
+            return Response({"detail":"saved job not found"},status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail":"job unsaved succesfully"},status=status.HTTP_200_OK)
+
+class SavedJobListView(APIView):
+    permission_classes=[IsCandidate]
+
+    def get(self,request):
+        try:
+            candidate_profile=CandidateProfile.objects.get(user=request.user,is_deleted=False)
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail":"candidate not found"},status=status.HTTP_404_NOT_FOUND)
         
+        saved_jobs=SavedJob.objects.filter(candidate=candidate_profile).select_related("job","job__employer").order_by("-saved_at")
+        serializer=SavedJobSerializer(saved_jobs,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+
+class RecommendedJobListView(APIView):
+    permission_classes=[IsCandidate]
+
+    def get(self,request):
+        try:
+            candidate_profile=CandidateProfile.objects.get(user=request.user,is_deleted=False)
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail":"candidate profile not found"},status=status.HTTP_404_NOT_FOUND)
+        candidate_skills=[skill.strip().lower()
+                          for skill in candidate_profile.skills.split(",")
+                          if skill.strip()]
+        if not candidate_skills:
+            return Response([],status=status.HTTP_200_OK)
+        jobs=Job.objects.filter(status=Job.Status.ACTIVE).select_related("employer")
+        recommended_jobs=[]
+        for job in jobs:
+            job_skills=[skill.strip().lower()
+            for skill in job.skills.split(",")
+            if skill.strip()]
+
+            matched_skills=set(candidate_skills) & set(job_skills)
+            if matched_skills:
+                match_score=(len(matched_skills)/len(candidate_skills))*100
+                recommended_jobs.append({"id":job.id,"title":job.title,"company":job.employer.company_name,"location":job.location,"job_type":job.job_type,"matched_skill":list(matched_skills),"match_score":round(match_score,2)})
+        recommended_jobs.sort(key=lambda job: job["match_score"],reverse=True)
+        return Response(recommended_jobs,status=status.HTTP_200_OK)
+
+
+class ApplicationTimelineView(APIView):
+    permission_classes=[IsCandidate]
+
+    def get(self,request,application_id):
+        try:
+            candidate_profile = CandidateProfile.objects.get(user=request.user,is_deleted=False)
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
+        try:
+            application=Application.objects.get(id=application_id,candidate=candidate_profile)
+        except Application.DoesNotExist:
+            return Response({"detail":"application not found"},status=status.HTTP_404_NOT_FOUND)
+        audit_logs = application.audit_log.all().order_by("created_at")
+        serializer=ApplicationTimelineSerializer(audit_logs,many=True)
+        return Response({"application_id":application.id,"job_title":application.job.title,"current_status":application.status,"timeline":serializer.data},status=status.HTTP_200_OK)
+        
+class ApplicationStatusNotificationView(APIView):
+    permission_classes=[IsCandidate]
+
+    def get(self,request):
+        try:
+            candidate_profile = CandidateProfile.objects.get(user=request.user,is_deleted=False)
+        except CandidateProfile.DoesNotExist:
+            return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
+        notifications=ApplicationAuditLog.objects.filter(application__candidate=candidate_profile).select_related("application","application__job").order_by("-created_at")
+        serializer=ApplicationStatusNotificationSerializer(notifications,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)

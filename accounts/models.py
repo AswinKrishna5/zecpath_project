@@ -84,7 +84,8 @@ class Job(models.Model):
 
     class Meta:
         indexes=models.Index(fields=["status"]),models.Index(fields=["location"]),models.Index(fields=["job_type"]),models.Index(fields=["created_at"]),
-
+    def __str__(self):
+        return f"{self.title}"
 
 class Application(models.Model):
     candidate=models.ForeignKey(CandidateProfile,on_delete=models.CASCADE,related_name="applications")
@@ -101,6 +102,16 @@ class Application(models.Model):
 
     def __str__(self):
         return f"{self.candidate.full_name}-{self.job.title}"
+
+class SavedJob(models.Model):
+    candidate=models.ForeignKey(CandidateProfile,on_delete=models.CASCADE,related_name="saved_jobs")
+    job=models.ForeignKey(Job,on_delete=models.CASCADE,related_name="saved_by")
+    saved_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=["candidate","job"],name="unique_candidaete_saved_job")]
+
+    def __str__(self):
+        return f"{self.candidate.full_name}-{self.job.title}"
     
 class ApplicationAuditLog(models.Model):
     application=models.ForeignKey(Application,on_delete=models.CASCADE,related_name="audit_log")
@@ -110,4 +121,4 @@ class ApplicationAuditLog(models.Model):
     created_at=models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.application.id} - {self.new_status}"
+        return f"{self.application.id} - {self.new_status}" 

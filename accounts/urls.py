@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import(SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestView,CandidateTestView,EmployerJobAnalyticsView,
-                   CandidateProfileView,EmployerProfileView,CandidateListView,EmployerJobView,PublicJobListView,
-                   LatestJobListView,ApplyJobView,MyApplicationListView,EmployerApplicationStatusView,EmployerApplicationListView)
+                   CandidateProfileView,EmployerProfileView,CandidateListView,EmployerJobView,PublicJobListView,SaveJobView,
+                   LatestJobListView,ApplyJobView,MyApplicationListView,EmployerApplicationStatusView,EmployerApplicationListView,
+                   SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView)
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -27,4 +28,10 @@ urlpatterns =[
     path("employer/applications/<int:application_id>/status/",EmployerApplicationStatusView.as_view(),name="employer_application_status"),
     path("employer/jobs/<int:job_id>/applications/",EmployerApplicationListView.as_view(),name="employer_application_list"),
     path("employer/jobs/<int:job_id>/analytics/",EmployerJobAnalyticsView.as_view(),name="employer_job_analytics"),
+    path("jobs/<int:job_id>/save/",SaveJobView.as_view(),name="save_job"),
+    path("saved-jobs/",SavedJobListView.as_view(),name="saved_job_list"),
+    path("recommended-jobs/",RecommendedJobListView.as_view(),name="recommended_jobs"),
+    path("applications/<int:application_id>/timeline/",ApplicationTimelineView.as_view(),name="application_timeline"),
+    path(
+    "application-notifications/",ApplicationStatusNotificationView.as_view(),name="application_notifications"),
 ]

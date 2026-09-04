@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application
+from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog
 
 class SignupSerializers(serializers.ModelSerializer):
     class Meta:
@@ -101,3 +101,28 @@ class EmployerApplicationSerializer(serializers.ModelSerializer):
         model=Application
         fields= "id","candidate_name","candidate_skills","candidate_education","candidate_experience","expected_salary","resume","status","applied_at"
         read_only_fields=fields
+
+class SavedJobSerializer(serializers.ModelSerializer):
+    title=serializers.CharField(source="job.title",read_only=True)
+    company=serializers.CharField(source="job.employer.company_name",read_only=True)
+    location=serializers.CharField(source="job.location",read_only=True)
+    job_type=serializers.CharField(source="job.job_type",read_only=True)
+    class Meta:
+        model=SavedJob
+        fields=("id","job","title","company","location","job_type","saved_at")
+        read_only_fields=fields
+
+class ApplicationTimelineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=ApplicationAuditLog
+        fields=("old_status","new_status","created_at")
+        read_only_fields=fields
+
+
+class ApplicationStatusNotificationSerializer(serializers.ModelSerializer):
+    job_title=serializers.CharField(source="application.job.title",read_only=True)
+    class Meta:
+        model=ApplicationAuditLog
+        fields=("id","application","job_title","old_status","new_status","created_at")
+        read_only_fields=fields
+        
