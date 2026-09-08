@@ -24,6 +24,14 @@ class CustomUser(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True,db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+class AccountFlag(models.Model):
+    user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='flags')
+    reason=models.CharField(max_length=255)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}-{self.reason}"
+
 
 class CandidateProfile(models.Model):
 
@@ -54,7 +62,7 @@ class EmployerProfile(models.Model):
     is_deleted=models.BooleanField(default=False)
 
     def __str__(self):
-        return self.company_name
+          return self.company_name
 
 class Job(models.Model):
     employer=models.ForeignKey(EmployerProfile,on_delete=models.CASCADE,related_name="jobs")
@@ -122,3 +130,13 @@ class ApplicationAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.application.id} - {self.new_status}" 
+
+class AdminAuditLog(models.Model):
+    admin=models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,related_name="admin_actions")
+    action=models.CharField(max_length=100)
+    target_type=models.CharField(max_length=50)
+    target_id=models.IntegerField(null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.admin} - {self.action}"

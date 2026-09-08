@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog
+from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,AccountFlag,AdminAuditLog
 
 class SignupSerializers(serializers.ModelSerializer):
     class Meta:
@@ -125,4 +125,17 @@ class ApplicationStatusNotificationSerializer(serializers.ModelSerializer):
         model=ApplicationAuditLog
         fields=("id","application","job_title","old_status","new_status","created_at")
         read_only_fields=fields
-        
+
+class AccountFlagSerializer(serializers.ModelSerializer):
+    username=serializers.CharField(source="user.username",read_only=True)
+    class Meta:
+        model=AccountFlag
+        fields=( "id","user","username","reason","created_at", )
+        read_only_fields=("id","user", "username","created_at",)
+
+class AdminAuditLogSerializer(serializers.ModelSerializer):
+    admin_username=serializers.CharField(source="admin.username",read_only=True)
+    class Meta:
+        model=AdminAuditLog
+        fields=("id","admin","admin_username","action","target_type","target_id","created_at",)
+        read_only_fields = ("id","admin","admin_username","created_at",)

@@ -1,19 +1,18 @@
 from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer
+from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,AccountFlagSerializer,AdminAuditLogSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob
-
+from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob,AccountFlag,AdminAuditLog
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import IsAdmin,IsEmployer,IsCandidate,IsCandidateOrAdmin,IsEmployerOrAdmin
 
 from .pagination import CandidatePagination,JobPagination
 
-from django.db.models import Q
+from django.db.models import Q,Count
 
 from .services import get_candidate_profile,get_employer_profile
 from .workflow import is_valid_transition
@@ -55,6 +54,115 @@ class AdminTestView(APIView):
 
     def get(self,request):
         return Response({"message":"welcome admin","username":request.user.username,"role":request.user.role, })
+
+class AdminEmployerApprovalView(APIView):
+    permission_classes=[IsAdmin]
+
+    def patch(self,request,user_id):
+        try:
+            employer=CustomUser.objects.get(id=user_id,role=CustomUser.Role.EMPLOYER)
+        except CustomUser.DoesNotExist:
+            return Response({"detail":"user not found"},status=status.HTTP_404_NOT_FOUND)
+        if employer.is_verified:
+            return Response({"detail":"employer is already variefied"},status=status.HTTP_400_BAD_REQUEST)
+        employer.is_verified=True
+        employer.save(update_fields=["is_verified"])
+        AdminAuditLog.objects.create(admin=request.user,action="APPROVE_EMPLOYER",target_type="User",target_id=employer.id)
+        return Response({"detail":"employer approved succesfully","id":employer.id,"username":employer.username,"is_varified":employer.is_verified},status=status.HTTP_200_OK)
+
+class AdminBlockUserView(APIView):
+    permission_classes=[IsAdmin]
+
+    def patch(self,request,user_id):
+        try:
+            user=CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"detail":"user is not found"},status=status.HTTP_404_NOT_FOUND)
+        if user==request.user:
+            return Response({"detail":"admin cannot block their own account"},status=status.HTTP_400_BAD_REQUEST)
+        if not user.is_active:
+            return Response({"detail":"profile is already blocked"},status=status.HTTP_400_BAD_REQUEST)
+        user.is_active=False
+        user.save(update_fields=["is_active"])
+        AdminAuditLog.objects.create(admin=request.user,action="BLOCK_USER",target_type="User",target_id=user.id)
+        return Response({"detail":"profile blocked succesfully","id":user_id,"username":user.username,"is_active":user.is_active})
+
+class AdminJobManagementView(APIView):
+    permission_classes=[IsAdmin]
+
+    def patch(self,request,job_id):
+        try:
+            job=Job.objects.get(id=job_id)
+        except Job.DoesNotExist:
+            return Response({"detail":"job not found"},status=status.HTTP_404_NOT_FOUND)
+        new_status=request.data.get("status")
+        if new_status not in[Job.Status.ACTIVE,Job.Status.INACTIVE]:
+            return Response({"detail":"status must be ACTIVE or INACTIVE"},status=status.HTTP_400_BAD_REQUEST)
+        job.status=new_status
+        job.save(update_fields=["status"])
+        AdminAuditLog.objects.create(admin=request.user,action="MANAGE_JOB_STATUS",target_type="Job",target_id=job.id)
+        return Response({"detail":"status updated succesfully","job_id":job_id,"title":job.title,"status":job.status})
+
+class AdminPlatformStatisticsView(APIView):
+    permission_classes=[IsAdmin]
+
+    def get(self,request):
+        total_users=CustomUser.objects.count()
+        total_candidate=CustomUser.objects.filter(role=CustomUser.Role.CANDIDATE).count()
+        total_employer=CustomUser.objects.filter(role=CustomUser.Role.EMPLOYER).count()
+        total_admin=CustomUser.objects.filter(role=CustomUser.Role.ADMIN).count()
+        total_jobs=Job.objects.count()
+        active_jobs=Job.objects.filter(status=Job.Status.ACTIVE).count()
+        inactive_jobs=Job.objects.filter(status=Job.Status.INACTIVE).count()
+        total_application=Application.objects.count()
+        return Response({"detail":"fetching completed","total_users":total_users,"total_candidate":total_candidate,"total_employer":total_employer,"total_admin":total_admin,"total_jobs":total_jobs,
+                         "active_jobs":active_jobs,"inactive_jobs":inactive_jobs,"toatl_applications":total_application},status=status.HTTP_200_OK)
+
+class AdminUserGrowthView(APIView):
+    permission_classes=[IsAdmin]
+
+    def get(self,request):
+        user_growth=CustomUser.objects.values("created_at__date").annotate(users=Count("id")).order_by("created_at__date")
+        response_data=[]
+        for item in user_growth:
+            response_data.append({"date":item["created_at__date"],"users":item["users"]})
+        return Response(response_data,status=status.HTTP_200_OK)
+
+class AdminJobActivityView(APIView):
+    permission_classes=[IsAdmin]
+
+    def get(self,request):
+        total_jobs=Job.objects.count()
+        active_jobs=Job.objects.filter(status=Job.Status.ACTIVE).count()
+        inactive_jobs=Job.objects.filter(status=Job.Status.INACTIVE).count()
+        return Response({"total_jobs":total_jobs,"active_jobs":active_jobs,"inactive_jobs":inactive_jobs},status=status.HTTP_200_OK)
+
+class AdminFlagAccountView(APIView):
+    permission_classes=[IsAdmin]
+
+    def post(self,request,user_id):
+        try:
+            user=CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"detail":"user not found"},status=status.HTTP_404_NOT_FOUND)
+
+        if user==request.user:
+            return Response({"detail":"admin not allowed to flag thier own account"},status=status.HTTP_400_BAD_REQUEST)
+
+        serializer=AccountFlagSerializer(data=request.data)
+        if serializer.is_valid():
+            flag=serializer.save(user=user)
+            AdminAuditLog.objects.create(admin=request.user,action="FLAG_ACCOUNT",target_type="User",target_id=user.id)
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+class AdminAuditLogListView(APIView):
+    permission_classes=[IsAdmin]
+
+    def get(self,request):
+        audit_logs=AdminAuditLog.objects.select_related("admin").order_by("-created_at")
+        serializer=AdminAuditLogSerializer(audit_logs,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
 class EmployerTestView(APIView):
     permission_classes=[IsEmployer]

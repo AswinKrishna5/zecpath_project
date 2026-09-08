@@ -2,7 +2,9 @@ from django.urls import path
 from .views import(SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestView,CandidateTestView,EmployerJobAnalyticsView,
                    CandidateProfileView,EmployerProfileView,CandidateListView,EmployerJobView,PublicJobListView,SaveJobView,
                    LatestJobListView,ApplyJobView,MyApplicationListView,EmployerApplicationStatusView,EmployerApplicationListView,
-                   SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView)
+                   SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView,AdminEmployerApprovalView,
+                   AdminBlockUserView,AdminJobManagementView,AdminPlatformStatisticsView,AdminUserGrowthView,AdminJobActivityView,AdminFlagAccountView,
+                   AdminAuditLogListView)
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -32,6 +34,13 @@ urlpatterns =[
     path("saved-jobs/",SavedJobListView.as_view(),name="saved_job_list"),
     path("recommended-jobs/",RecommendedJobListView.as_view(),name="recommended_jobs"),
     path("applications/<int:application_id>/timeline/",ApplicationTimelineView.as_view(),name="application_timeline"),
-    path(
-    "application-notifications/",ApplicationStatusNotificationView.as_view(),name="application_notifications"),
+    path("application-notifications/",ApplicationStatusNotificationView.as_view(),name="application_notifications"),
+    path("admin/employers/<int:user_id>/approve/",AdminEmployerApprovalView.as_view(),name="admin_employer_approve"),
+    path("admin/users/<int:user_id>/block/",AdminBlockUserView.as_view(),name="admin_block_user"),
+    path("admin/jobs/<int:job_id>/status/",AdminJobManagementView.as_view(),name="admin_job_management"),
+    path("admin/statistics/",AdminPlatformStatisticsView.as_view(),name="admin_platform_statistics"),
+    path("admin/user-growth/",AdminUserGrowthView.as_view(), name="admin_user_growth"),
+    path("admin/job-activity/", AdminJobActivityView.as_view(),name="admin_job_activity"),
+    path("admin/users/<int:user_id>/flag/",AdminFlagAccountView.as_view(),name="admin_flag_account"),
+    path("admin/audit-logs/",AdminAuditLogListView.as_view(),name="admin_audit_logs"),
 ]

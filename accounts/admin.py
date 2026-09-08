@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import CustomUser, CandidateProfile, EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog
+from .models import CustomUser, CandidateProfile, EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,AccountFlag
 
 
 @admin.register(CustomUser)
@@ -138,3 +138,7 @@ class SavedJobAdmin(admin.ModelAdmin):
 @admin.register(ApplicationAuditLog)
 class ApplicationAuditLogAdmin(admin.ModelAdmin):
     list_display=("id","application","actor","old_status","new_status","created_at",)
+
+@admin.register(AccountFlag)
+class AccountFlagAdmin(admin.ModelAdmin):
+    list_display=("id","user","reason","created_at",)
