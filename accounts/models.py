@@ -43,6 +43,7 @@ class CandidateProfile(models.Model):
     education=models.TextField(blank=True)
     experience=models.TextField(blank=True)
     resume=models.FileField(upload_to=resume_upload_path,blank=True,null=True)
+    resume_text=models.TextField(null=True,blank=True)
     expected_salary=models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True)
     is_deleted=models.BooleanField(default=False)
 

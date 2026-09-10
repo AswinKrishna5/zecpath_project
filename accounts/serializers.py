@@ -52,8 +52,8 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=CandidateProfile
-        fields="id","full_name","phone","skills","education","experience","expected_salary","resume","is_deleted",
-        read_only_fields="id","is_deleted"
+        fields="id","full_name","phone","skills","education","experience","expected_salary","resume","resume_text","is_deleted",
+        read_only_fields="id","resume_text","is_deleted"
 
 
 class EmployerProfileSerializer(serializers.ModelSerializer):

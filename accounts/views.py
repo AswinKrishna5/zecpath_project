@@ -14,7 +14,7 @@ from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q,Count
 
-from .services import get_candidate_profile,get_employer_profile
+from .services import get_candidate_profile,get_employer_profile,parse_resume
 from .workflow import is_valid_transition
 
 # Create your views here.
@@ -186,8 +186,17 @@ class CandidateProfileView(APIView):
             )
         serializer=CandidateProfileSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
+            profile=serializer.save(user=request.user)
+            if profile.resume:
+                try:
+                    profile.resume_text=parse_resume(profile.resume)
+                    profile.save(update_fields=["resume_text"])
+                except ValueError as error:
+                    return Response({"detail":str(error)},status=status.HTTP_400_BAD_REQUEST)
+                except Exception:
+                    return Response({"detail":"unable to parse resumes"},status=status.HTTP_400_BAD_REQUEST)
+            response_serializer=CandidateProfileSerializer(profile)
+            return Response(response_serializer.data,status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
@@ -226,22 +235,27 @@ class CandidateProfileView(APIView):
                  return Response({"detail": "Candidate profile not found."},status=status.HTTP_404_NOT_FOUND)
 
         old_resume_name = profile.resume.name if profile.resume else None
-
+        old_resume_storage=profile.resume.storage if profile.resume else None
         serializer = CandidateProfileSerializer(profile,data=request.data)
 
         if serializer.is_valid():
             updated_profile = serializer.save()
 
+            if "resume" in request.FILES:
+                if updated_profile.resume:
+                    try:
+                        updated_profile.resume_text=parse_resume(updated_profile.resume)
+                        updated_profile.save(update_fields=["resume_text"])
+                    except ValueError as error:
+                        return Response({"detail":str(error)},status=status.HTTP_400_BAD_REQUEST)
+                    except Exception:
+                        return Response({"detail":"unable to parse resume"},status=status.HTTP_400_BAD_REQUEST)
         
             if "resume" in request.FILES and old_resume_name:
                 if old_resume_name != updated_profile.resume.name:
-                    old_resume_path = profile.resume.storage.path(old_resume_name)
+                    old_resume_storage.delete(old_resume_name)
 
-                    if old_resume_path:
-                        import os
-
-                        if os.path.exists(old_resume_path):
-                            os.remove(old_resume_path)
+                   
 
             response_serializer = CandidateProfileSerializer(updated_profile)
 
