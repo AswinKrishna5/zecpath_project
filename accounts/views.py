@@ -14,7 +14,7 @@ from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q,Count
 
-from .services import get_candidate_profile,get_employer_profile,parse_resume
+from .services import get_candidate_profile,get_employer_profile,parse_resume,parse_resume_structured
 from .workflow import is_valid_transition
 
 # Create your views here.
@@ -189,8 +189,10 @@ class CandidateProfileView(APIView):
             profile=serializer.save(user=request.user)
             if profile.resume:
                 try:
-                    profile.resume_text=parse_resume(profile.resume)
-                    profile.save(update_fields=["resume_text"])
+                    parsed_data=parse_resume_structured(profile.resume)
+                    profile.resume_text=parsed_data["text"]
+                    profile.resume_data=parsed_data
+                    profile.save(update_fields=["resume_text","resume_data"])
                 except ValueError as error:
                     return Response({"detail":str(error)},status=status.HTTP_400_BAD_REQUEST)
                 except Exception:
@@ -244,8 +246,10 @@ class CandidateProfileView(APIView):
             if "resume" in request.FILES:
                 if updated_profile.resume:
                     try:
-                        updated_profile.resume_text=parse_resume(updated_profile.resume)
-                        updated_profile.save(update_fields=["resume_text"])
+                        parsed_data=parse_resume_structured(updated_profile.resume)
+                        updated_profile.resume_text=parsed_data["text"]
+                        updated_profile.resume_data=parsed_data
+                        updated_profile.save(update_fields=["resume_text","resume_data"])
                     except ValueError as error:
                         return Response({"detail":str(error)},status=status.HTTP_400_BAD_REQUEST)
                     except Exception:

@@ -75,4 +75,56 @@ def extract_resume_text(file):
 def parse_resume(file):
     raw_text=extract_resume_text(file)
     cleaned_text=clean_resume_text(raw_text)
-    return cleaned_text    
+    return cleaned_text   
+
+SKILLS_LIBRARY=["python","mongodb","django","django rest framework","sql","mysql","postgresql","javascript","react","html","css","git","github","docker","aws",]
+
+def extract_skills(text):
+    extracted_skills=[]
+    for skills in SKILLS_LIBRARY:
+        pattern=rf"\b{re.escape(skills)}\b"
+        if re.search(pattern,text,re.IGNORECASE):
+            extracted_skills.append(skills)
+    return extracted_skills
+
+def parse_resume_data(file):
+    raw_text=extract_resume_text(file)
+    cleaned_text=clean_resume_text(raw_text)
+    skills=extract_skills(cleaned_text)
+    return{"text":cleaned_text,"skills":skills}
+
+def extract_experience_years(text):
+    pattern=r"(\d+)\+?\s*(?:years?|yrs?)"
+    mataches=re.findall(pattern,text,re.IGNORECASE)
+    if mataches:
+        return max(int(year)for year in mataches)
+    return 0
+
+ROLE_LIBRARY=["python developer","django developer","backend developer","software developer","software engineer","full stack developer","frontend developer","web developer",]
+
+def extract_roles(text):
+    extracted_roles=[]
+    for role in ROLE_LIBRARY:
+        pattern=rf"\b{re.escape(role)}\b"
+        if re.search(pattern,text,re.IGNORECASE):
+            extracted_roles.append(role)
+    return extracted_roles
+
+EDUCATION_LIBRARY=["bca","b.tech","be","mca","m.tech","me","bsc","msc","bachelor of computer applications","master of computer applications","bachelor of technology","master of technology",]
+
+def extract_education(text):
+    extracted_education=[]
+    for education in EDUCATION_LIBRARY:
+        pattern=rf"\b{re.escape(education)}\b"
+        if re.search(pattern,text,re.IGNORECASE):
+            extracted_education.append(education)
+    return extracted_education
+
+def parse_resume_structured(file):
+    raw_text=extract_resume_text(file)
+    cleaned_text=clean_resume_text(raw_text)
+    skills=extract_skills(cleaned_text)
+    role=extract_roles(cleaned_text)
+    experience_years=extract_experience_years(cleaned_text)
+    education=extract_education(cleaned_text)
+    return{"text":cleaned_text,"skills":skills,"role":role,"experience_years":experience_years,"education":education}
