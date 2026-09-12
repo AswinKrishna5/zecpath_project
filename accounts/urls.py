@@ -4,7 +4,7 @@ from .views import(SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestV
                    LatestJobListView,ApplyJobView,MyApplicationListView,EmployerApplicationStatusView,EmployerApplicationListView,
                    SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView,AdminEmployerApprovalView,
                    AdminBlockUserView,AdminJobManagementView,AdminPlatformStatisticsView,AdminUserGrowthView,AdminJobActivityView,AdminFlagAccountView,
-                   AdminAuditLogListView)
+                   AdminAuditLogListView,RankedCandidateListView)
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -43,4 +43,5 @@ urlpatterns =[
     path("admin/job-activity/", AdminJobActivityView.as_view(),name="admin_job_activity"),
     path("admin/users/<int:user_id>/flag/",AdminFlagAccountView.as_view(),name="admin_flag_account"),
     path("admin/audit-logs/",AdminAuditLogListView.as_view(),name="admin_audit_logs"),
+    path("employer/jobs/<int:job_id>/applications/ranked/",RankedCandidateListView.as_view(),name="ranked_candidates"),
 ]

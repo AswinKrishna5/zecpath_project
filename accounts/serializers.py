@@ -139,3 +139,9 @@ class AdminAuditLogSerializer(serializers.ModelSerializer):
         model=AdminAuditLog
         fields=("id","admin","admin_username","action","target_type","target_id","created_at",)
         read_only_fields = ("id","admin","admin_username","created_at",)
+
+class RankedCandidateSerializer(serializers.ModelSerializer):
+    candidate_name=serializers.CharField(source="candidate.full_name",read_only=True)
+    class Meta:
+        model=Application
+        fields=("id","candidate_name","status","ats_score","skill_match","experience_match","education_match","applied_at",)

@@ -101,6 +101,10 @@ class Application(models.Model):
     candidate=models.ForeignKey(CandidateProfile,on_delete=models.CASCADE,related_name="applications")
     job=models.ForeignKey(Job,on_delete=models.CASCADE,related_name="applications")
     resume_snapshot=models.FileField(upload_to="application_resumes/")
+    ats_score=models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
+    skill_match =models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
+    experience_match =models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
+    education_match =models.DecimalField(max_digits=5,decimal_places=2,blank=True,null=True)
     class Status(models.TextChoices):
         APPLIED = "APPLIED", "Applied"
         SHORTLISTED = "SHORTLISTED", "Shortlisted"

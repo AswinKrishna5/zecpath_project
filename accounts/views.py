@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,AccountFlagSerializer,AdminAuditLogSerializer
+from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -14,7 +14,7 @@ from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q,Count
 
-from .services import get_candidate_profile,get_employer_profile,parse_resume,parse_resume_structured
+from .services import get_candidate_profile,get_employer_profile,parse_resume,parse_resume_structured,calculate_ats_score
 from .workflow import is_valid_transition
 
 # Create your views here.
@@ -484,6 +484,12 @@ class ApplyJobView(APIView):
         if Application.objects.filter(candidate=candidate,job=job).exists():
             return Response({"detail":"you have already applied for this job"},status=status.HTTP_400_BAD_REQUEST)
         application=Application.objects.create(candidate=candidate,job=job,resume_snapshot=candidate.resume,status=Application.Status.APPLIED)
+        score_data=calculate_ats_score(candidate,job)
+        application.ats_score=score_data["ats_score"]
+        application.skill_match=score_data["skill_match"]
+        application.experience_match=score_data["experience_match"]
+        application.education_match=score_data["education_match"]
+        application.save(update_fields=["ats_score","skill_match","experience_match","education_match",])
         ApplicationAuditLog.objects.create(application=application,actor=request.user,old_status=None,new_status=Application.Status.APPLIED)
         return Response({"detail":"application submitted successfully"},status=status.HTTP_201_CREATED)
 
@@ -669,3 +675,19 @@ class ApplicationStatusNotificationView(APIView):
         notifications=ApplicationAuditLog.objects.filter(application__candidate=candidate_profile).select_related("application","application__job").order_by("-created_at")
         serializer=ApplicationStatusNotificationSerializer(notifications,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
+
+class RankedCandidateListView(APIView):
+    permission_classes=[IsEmployer]
+
+    def get(self,request,job_id):
+        try:
+            employer=self.request.user.employer_profile
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer profile not found"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            job=Job.objects.get(id=job_id,employer=employer)
+        except Job.DoesNotExist:
+            return Response({"detail":"job not found"},status=status.HTTP_404_NOT_FOUND)
+        applications=Application.objects.filter(job=job).select_related("candidate").order_by("-ats_score")
+        serializers=RankedCandidateSerializer(applications,many=True)
+        return Response(serializers.data,status=status.HTTP_200_OK)
