@@ -1,8 +1,10 @@
-from .models import CandidateProfile,EmployerProfile
+from .models import CandidateProfile,EmployerProfile,Application
 import re
 import os
 import pdfplumber
 from docx import Document
+
+from .workflow import is_valid_transition
 
 def get_candidate_profile(user,user_id=None):
 
@@ -197,3 +199,70 @@ def rank_candidates(job,candidates):
                                 "experience_match": score_data["experience_match"],"education_match": score_data["education_match"],})
     ranked_candidates.sort(key=lambda item:item["score"],reverse=True)
     return ranked_candidates
+
+def check_eligibility(application,threshold):
+    if application.ats_score is None:
+        return False
+    return application.ats_score >= threshold
+
+ROLE_THRESHOLDS={"python developer": 80,"django developer": 80,"backend developer": 80,"software developer": 75,
+                "software engineer": 80,"full stack developer": 75,"frontend developer": 70,"web developer": 70,}
+
+def get_job_threshold(job):
+    job_title=job.title.strip().lower()
+    for role,threshold in ROLE_THRESHOLDS.items():
+        if role in job_title:
+            return threshold
+    return 75
+
+def check_job_eligibility(application):
+    threshold=get_job_threshold(application.job)
+    return check_eligibility(application,threshold)
+
+def auto_shortlist_application(application):
+    if application.status!=application.Status.APPLIED:
+        return False
+    if check_job_eligibility(application):
+        application.status=application.Status.SHORTLISTED
+        application.save(updated_fields=["status"])
+        return True
+    return False
+
+def auto_reject_application(application):
+    if application.status!=application.Status.APPLIED:
+        return False
+    if not check_job_eligibility(application):
+        application.status=application.Status.REJECTED
+        application.save(update_fields=["status"])
+        return True
+    return False
+
+def create_status_notification(application):
+    if application.status==application.Status.SHORTLISTED:
+        message="your application has been shortlisted"
+    elif application.status==application.Status.REJECTED:
+        message="your application has been rejected"
+    else :
+        return None
+    return {"application_id": application.id,"job_title": application.job.title,"status": application.status,"message": message,}
+
+def process_job_applications(job):
+    applications=Application.objects.filter(job=job,status=Application.Status.APPLIED)
+    results=[]
+    for application in applications:
+        if check_job_eligibility(application):
+            application.status=Application.Status.SHORTLISTED
+            action="SHORTLISTED"
+        else:
+            application.status=Application.Status.REJECTED
+            action="REJECTED"
+        application.save(update_fields=["status"])
+        results.append({ "application_id": application.id,"status": application.status,"action": action,})
+    return results
+
+def override_application_status(application,new_status):
+    if not is_valid_transition(application.status,new_status):
+        return False
+    application.status=new_status
+    application.save(update_fields=["status"])
+    return True

@@ -14,7 +14,7 @@ from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q,Count
 
-from .services import get_candidate_profile,get_employer_profile,parse_resume,parse_resume_structured,calculate_ats_score
+from .services import get_candidate_profile,get_employer_profile,parse_resume,parse_resume_structured,calculate_ats_score,override_application_status
 from .workflow import is_valid_transition
 
 # Create your views here.
@@ -691,3 +691,24 @@ class RankedCandidateListView(APIView):
         applications=Application.objects.filter(job=job).select_related("candidate").order_by("-ats_score")
         serializers=RankedCandidateSerializer(applications,many=True)
         return Response(serializers.data,status=status.HTTP_200_OK)
+
+
+class EmployerOverrideApplicationView(APIView):
+    permission_classes=[IsEmployer]
+
+    def patch(self,request,application_id):
+        try:
+            employer=request.user.employer_profile
+        except EmployerProfile.DoesNotExist:
+            return Response({"detail":"employer profile not found"},status=status.HTTP_404_NOT_FOUND)
+        try:
+            application=Application.objects.select_related("job").get(id=application_id,job__employer=employer)
+        except Application.DoesNotExist:
+            return Response({"detail":"application not found"},status=status.HTTP_404_NOT_FOUND)
+        new_status=request.data.get("status")
+        if new_status not in Application.Status.values:
+            return Response({"invalid application status "},status=status.HTTP_400_BAD_REQUEST)
+        if not override_application_status(application,new_status):
+            return Response({"detail":"this transition not allowed"},status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail":"application status overriden succesfully","application_id":application.id,"status":application.status},status=status.HTTP_200_OK)
+    
