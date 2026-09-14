@@ -1,10 +1,13 @@
-from .models import CandidateProfile,EmployerProfile,Application
+from .models import CandidateProfile,EmployerProfile,Application,EmailLog
 import re
 import os
 import pdfplumber
 from docx import Document
 
 from .workflow import is_valid_transition
+
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 
 def get_candidate_profile(user,user_id=None):
 
@@ -224,7 +227,8 @@ def auto_shortlist_application(application):
         return False
     if check_job_eligibility(application):
         application.status=application.Status.SHORTLISTED
-        application.save(updated_fields=["status"])
+        application.save(update_fields=["status"])
+        send_shortlisted_email(application=application,candidate_email=application.candidate.user.email,candidate_name=application.candidate.full_name,job_title=application.job.title,)
         return True
     return False
 
@@ -234,6 +238,8 @@ def auto_reject_application(application):
     if not check_job_eligibility(application):
         application.status=application.Status.REJECTED
         application.save(update_fields=["status"])
+        send_rejected_email(application=application,candidate_email=application.candidate.user.email,candidate_name=application.candidate.full_name,job_title=application.job.title,)
+        
         return True
     return False
 
@@ -250,13 +256,12 @@ def process_job_applications(job):
     applications=Application.objects.filter(job=job,status=Application.Status.APPLIED)
     results=[]
     for application in applications:
-        if check_job_eligibility(application):
-            application.status=Application.Status.SHORTLISTED
+        if auto_shortlist_application(application):
             action="SHORTLISTED"
-        else:
-            application.status=Application.Status.REJECTED
+        elif auto_reject_application(application):
             action="REJECTED"
-        application.save(update_fields=["status"])
+        else:
+            action="NO MATCH"
         results.append({ "application_id": application.id,"status": application.status,"action": action,})
     return results
 
@@ -266,3 +271,27 @@ def override_application_status(application,new_status):
     application.status=new_status
     application.save(update_fields=["status"])
     return True
+
+def send_application_submitted_email(application,candidate_email,candidate_name,job_title):
+    message=render_to_string("emails/application_submitted.txt",{"candidate_name":candidate_name,"job_title":job_title})
+    send_email_with_retry(application=application,subject="application submitted succesfully",message=message,recipient_email=candidate_email)
+
+def send_shortlisted_email(application,candidate_email,candidate_name,job_title):
+    message=render_to_string("emails/shortlisted.txt",{"candidate_name":candidate_name,"job_title":job_title})
+    send_email_with_retry(application=application,subject="application shortlisted succesfully",message=message,recipient_email=candidate_email)
+
+def send_rejected_email(application,candidate_email,candidate_name,job_title):
+    message=render_to_string("emails/rejected.txt",{"candidate_name":candidate_name,"job_title":job_title})
+    send_email_with_retry(application=application,subject="application rejected",message=message,recipient_email=candidate_email)
+
+def send_email_with_retry(application,subject,message,recipient_email,max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            send_mail(subject,message,None,[recipient_email],fail_silently=False)
+            EmailLog.objects.create(application=application,recipient=recipient_email,subject=subject,status="SENT")
+            return True
+        except Exception as e:
+            if attempt==max_retries-1:
+                EmailLog.objects.create(application=application,recipient=recipient_email,subject=subject,status="FAILED",error_message=str(e))
+                return False
+    return False

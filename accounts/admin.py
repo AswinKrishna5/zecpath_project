@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import CustomUser, CandidateProfile, EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,AccountFlag
+from .models import CustomUser, CandidateProfile, EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,AccountFlag,EmailLog
 
 
 @admin.register(CustomUser)
@@ -142,3 +142,14 @@ class ApplicationAuditLogAdmin(admin.ModelAdmin):
 @admin.register(AccountFlag)
 class AccountFlagAdmin(admin.ModelAdmin):
     list_display=("id","user","reason","created_at",)
+
+@admin.register(EmailLog)
+class EmailLogAdmin(admin.ModelAdmin):
+    list_display=("id",
+        "application",
+        "recipient",
+        "subject",
+        "status",
+        "created_at",)
+    list_filter=("status","created_at")
+    search_fields=("recipient","subject")

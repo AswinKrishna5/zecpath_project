@@ -1,0 +1,8 @@
+congratulations !
+hello {{candidate_name}}
+we are pleased to inform you that you have been shortlisted for the positoin of {{job_title}}
+your application has succesfully passed the initial selection stage
+the employer will contact you with further information about the next stage of the hiring process
+
+Best regards,
+zecpath ATS team

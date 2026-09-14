@@ -1,0 +1,8 @@
+Application submitted succesfully
+hello {{candidate_name}},
+your application for {{job_title}} has been succesfully submitted .
+your application id now being reviewed by emoloyer.
+thank you for chosing zecpath ATS.
+
+Best regards,
+zecpath ATS team

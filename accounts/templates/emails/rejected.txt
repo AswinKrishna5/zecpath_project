@@ -1,0 +1,8 @@
+Application status update!
+hello {{candidate_name}},
+thank you for applying for the positoin of {{job_title}}
+after revieweing your application,we regret to you inform that your application has not been selected to move forward at this time 
+we appreciate your interest in the oppertunity and wish you success in your job search 
+
+Best regards,
+zecpath ATS team

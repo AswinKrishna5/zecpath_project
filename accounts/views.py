@@ -14,7 +14,7 @@ from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q,Count
 
-from .services import get_candidate_profile,get_employer_profile,parse_resume,parse_resume_structured,calculate_ats_score,override_application_status
+from .services import get_candidate_profile,get_employer_profile,parse_resume_structured,calculate_ats_score,override_application_status,send_application_submitted_email,send_shortlisted_email,send_rejected_email
 from .workflow import is_valid_transition
 
 # Create your views here.
@@ -491,6 +491,7 @@ class ApplyJobView(APIView):
         application.education_match=score_data["education_match"]
         application.save(update_fields=["ats_score","skill_match","experience_match","education_match",])
         ApplicationAuditLog.objects.create(application=application,actor=request.user,old_status=None,new_status=Application.Status.APPLIED)
+        send_application_submitted_email(application=application,candidate_email=request.user.email,candidate_name=candidate.full_name,job_title=job.title)
         return Response({"detail":"application submitted successfully"},status=status.HTTP_201_CREATED)
 
 class MyApplicationListView(APIView):
@@ -710,5 +711,9 @@ class EmployerOverrideApplicationView(APIView):
             return Response({"invalid application status "},status=status.HTTP_400_BAD_REQUEST)
         if not override_application_status(application,new_status):
             return Response({"detail":"this transition not allowed"},status=status.HTTP_400_BAD_REQUEST)
+        if application.status==Application.Status.SHORTLISTED:
+            send_shortlisted_email(application=application,candidate_email=application.candidate.user.email,candidate_name=application.candidate.full_name,job_title=application.job.title)
+        if application.status==Application.Status.REJECTED:
+            send_rejected_email(application=application,candidate_email=application.candidate.user.email,candidate_name=application.candidate.full_name,job_title=application.job.title,)
         return Response({"detail":"application status overriden succesfully","application_id":application.id,"status":application.status},status=status.HTTP_200_OK)
     
