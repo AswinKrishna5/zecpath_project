@@ -542,7 +542,7 @@ class EmployerApplicationListView(APIView):
             job=Job.objects.get(id=job_id,employer=employer_profile)
         except Job.DoesNotExist:
             return Response({"deatail":"job not found or you do not own this job"},status=status.HTTP_404_NOT_FOUND)
-        application=Application.objects.filter(job=job).select_related("candidate").order_by("-applied_at")
+        application=Application.objects.filter(job=job).select_related("candidate","job").order_by("-applied_at")
         status_filter=request.query_params.get("status")
         if status_filter:
             if status_filter not in Application.Status.values:
