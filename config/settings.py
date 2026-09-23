@@ -44,7 +44,8 @@ INSTALLED_APPS = [
 
     'accounts',
     'rest_framework',
-    'rest_framework_simplejwt.token_blacklist'
+    'rest_framework_simplejwt.token_blacklist',
+    'django_celery_beat',
     ]
 
 REST_FRAMEWORK = {
@@ -188,3 +189,5 @@ LOGGING = {
         },
     },
 }   
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"

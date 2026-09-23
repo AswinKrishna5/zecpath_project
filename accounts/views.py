@@ -16,6 +16,7 @@ from django.db.models import Q,Count
 
 from .services import get_candidate_profile,get_employer_profile,parse_resume_structured,calculate_ats_score,override_application_status,send_application_submitted_email,send_shortlisted_email,send_rejected_email
 from .workflow import is_valid_transition
+from .tasks import send_application_email_task
 
 # Create your views here.
 
@@ -491,7 +492,7 @@ class ApplyJobView(APIView):
         application.education_match=score_data["education_match"]
         application.save(update_fields=["ats_score","skill_match","experience_match","education_match",])
         ApplicationAuditLog.objects.create(application=application,actor=request.user,old_status=None,new_status=Application.Status.APPLIED)
-        send_application_submitted_email(application=application,candidate_email=request.user.email,candidate_name=candidate.full_name,job_title=job.title)
+        send_application_email_task.delay(application.id,request.user.email,candidate.full_name,job.title)
         return Response({"detail":"application submitted successfully"},status=status.HTTP_201_CREATED)
 
 class MyApplicationListView(APIView):
