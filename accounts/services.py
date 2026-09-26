@@ -8,6 +8,9 @@ from .workflow import is_valid_transition
 
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
+from datetime import time,timedelta
+from django.utils import timezone
+
 
 def get_candidate_profile(user,user_id=None):
 
@@ -229,6 +232,7 @@ def auto_shortlist_application(application):
         application.status=application.Status.SHORTLISTED
         application.save(update_fields=["status"])
         send_shortlisted_email(application=application,candidate_email=application.candidate.user.email,candidate_name=application.candidate.full_name,job_title=application.job.title,)
+        trigger_ai_call_if_eligible(application)
         return True
     return False
 
@@ -295,3 +299,52 @@ def send_email_with_retry(application,subject,message,recipient_email,max_retrie
                 EmailLog.objects.create(application=application,recipient=recipient_email,subject=subject,status="FAILED",error_message=str(e))
                 return False
     return False
+
+def is_ai_call_eligible(application,threshold=80):
+    if application.ats_score is None:
+        return False
+    if application.job.status != "ACTIVE":
+        return False
+    if not application.candidate.is_available_for_ai_call :
+        return False
+    return application.ats_score>=threshold
+
+def trigger_ai_call_if_eligible(application):
+    from .models import AICall
+    if application.status!=application.Status.SHORTLISTED:
+        return False
+    if not is_ai_call_eligible(application):
+        return False
+    if AICall.objects.filter(application=application).exists():
+        return False
+    if is_within_ai_call_window():
+        from .tasks import trigger_ai_call_task
+        AICall.objects.create(application=application,status=AICall.Status.QUEUED)
+        trigger_ai_call_task.delay(application.id)
+    else:
+        schedule_ai_call_for_next_window(application.id)
+    return True
+
+def is_within_ai_call_window():
+    current_time=timezone.localtime().time()
+    start_time=time(9,0)
+    end_time=time(18,0)
+    return start_time<=current_time<=end_time
+
+def schedule_ai_call_for_next_window(applicatoin_id):
+    from .tasks import trigger_ai_call_task
+    now=timezone.localtime()
+    start_time=time(9,0)
+    end_time=time(18,0)
+    today_start=now.replace(hour=9,minute=0,microsecond=0)
+    today_end=now.replace(hour=18,minute=0,microsecond=0)
+    if now<today_start:
+        target_time=today_start
+    elif now>today_end:
+        target_time=today_start+timedelta(days=1)
+    else:
+        trigger_ai_call_task.delay(applicatoin_id)
+        return True
+    countdown=int((target_time-now).total_seconds())
+    trigger_ai_call_task.apply_sync(args=[applicatoin_id],countdown=countdown)
+    return True

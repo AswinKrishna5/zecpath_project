@@ -47,6 +47,7 @@ class CandidateProfile(models.Model):
     resume_data=models.JSONField(null=True,blank=True)
     expected_salary=models.DecimalField(max_digits=10,decimal_places=2,null=True,blank=True)
     is_deleted=models.BooleanField(default=False)
+    is_available_for_ai_call=models.BooleanField(default=True)
 
     def __str__(self):
         return self.full_name
@@ -157,3 +158,16 @@ class EmailLog(models.Model):
 
     def __str__(self):
         return f"{self.recipient}-{self.subject}-{self.status}"
+
+class AICall(models.Model):
+    class Status(models.TextChoices):
+        QUEUED = "QUEUED", "Queued"
+        IN_PROGRESS = "IN_PROGRESS", "In Progress"
+        COMPLETED = "COMPLETED", "Completed"
+        FAILED = "FAILED", "Failed"
+    application=models.OneToOneField(Application,on_delete=models.CASCADE,related_name="ai_call")
+    status=models.CharField(max_length=20,choices=Status.choices,default=Status.QUEUED)
+    created_at=models.DateTimeField(auto_now_add=True)
+    started_at=models.DateTimeField(null=True,blank=True)
+    completed_at=models.DateTimeField(null=True,blank=True)
+    

@@ -21,9 +21,27 @@ def parse_resume_task(profile_id):
     profile.save(update_fields=["resume_text","resume_data"])
     return "resume parsed succesfully"
 
-@shared_task
-def trigger_ai_call_task(application_id):
-    from .models import Application
-    application=Application.objects.get(id=application_id)
-    if application.status!=Application.Status.SHORTLISTED:
-        return "application is not shortlisted"
+@shared_task(bind=True,max_retries=3)
+def trigger_ai_call_task(self,application_id):
+    from django.utils import timezone
+    from .models import Application,AICall
+    try:
+        application=Application.objects.get(id=application_id)
+        if application.status!=Application.Status.SHORTLISTED:
+            return "application is not shortlisted"
+        ai_call=AICall.objects.get(application=application)
+        ai_call.status=AICall.Status.IN_PROGRESS
+        ai_call.started_at=timezone.now()
+        ai_call.save(update_fields=["status","started_at"])
+        ai_call.status=AICall.Status.COMPLETED
+        ai_call.completed_at=timezone.now()
+        ai_call.save(update_fields=["status","completed_at"])
+        return f"ai call completed for application {application.id}"
+    except Exception as exc:
+        try:
+            ai_call=AICall.objects.get(application_id=application_id)
+            ai_call.status=AICall.Status.FAILED
+            ai_call.save(update_fields=["status"])
+        except AICall.DoesNotExist:
+            pass
+        raise self.retry(exc=exc,countdown=10)
