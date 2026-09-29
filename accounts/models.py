@@ -170,4 +170,48 @@ class AICall(models.Model):
     created_at=models.DateTimeField(auto_now_add=True)
     started_at=models.DateTimeField(null=True,blank=True)
     completed_at=models.DateTimeField(null=True,blank=True)
-    
+
+class AIInterviewSession(models.Model):
+    class Status(models.TextChoices):
+        SCHEDULED = "SCHEDULED", "Scheduled"
+        IN_PROGRESS = "IN_PROGRESS", "In Progress"
+        COMPLETED = "COMPLETED", "Completed"
+        FAILED = "FAILED", "Failed"
+    ai_call=models.OneToOneField(AICall,on_delete=models.CASCADE,related_name="interview_session")
+    transcript=models.JSONField(default=list,blank=True)
+    status=models.CharField(max_length=20,choices=Status.choices,default=Status.SCHEDULED)
+    started_at=models.DateTimeField(null=True,blank=True)
+    ended_at=models.DateTimeField(null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"interview session {self.id}-{self.status}"
+
+class AIQuestion(models.Model):
+    session=models.ForeignKey(AIInterviewSession,on_delete=models.CASCADE,related_name="questions")
+    question_text=models.TextField()
+    question_order=models.PositiveIntegerField()
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.question_order}-{self.session_id}"
+
+class AIAnswer(models.Model):
+    question=models.OneToOneField(AIQuestion,on_delete=models.CASCADE,related_name="answer")
+    answer_text=models.TextField()
+    answered_at=models.DateTimeField(null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"answer of question {self.question_id}"
+
+class CallLog(models.Model):
+    triggered_by=models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name="ai_call_logs")
+    reason=models.TextField(null=True,blank=True)
+    ai_call=models.ForeignKey(AICall,on_delete=models.CASCADE,related_name="call_logs")
+    event=models.CharField(max_length=100)
+    details=models.TextField(null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.event}-call{self.ai_call_id}"

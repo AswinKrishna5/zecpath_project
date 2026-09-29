@@ -11,6 +11,8 @@ from django.template.loader import render_to_string
 from datetime import time,timedelta
 from django.utils import timezone
 
+from django.db import transaction
+
 
 def get_candidate_profile(user,user_id=None):
 
@@ -310,19 +312,29 @@ def is_ai_call_eligible(application,threshold=80):
     return application.ats_score>=threshold
 
 def trigger_ai_call_if_eligible(application):
-    from .models import AICall
+    from .models import AICall,CallLog
     if application.status!=application.Status.SHORTLISTED:
         return False
     if not is_ai_call_eligible(application):
         return False
-    if AICall.objects.filter(application=application).exists():
-        return False
-    if is_within_ai_call_window():
-        from .tasks import trigger_ai_call_task
-        AICall.objects.create(application=application,status=AICall.Status.QUEUED)
-        trigger_ai_call_task.delay(application.id)
-    else:
-        schedule_ai_call_for_next_window(application.id)
+    with transaction.atomic():
+        ai_call,created=AICall.objects.get_or_create(application=application,defaults={"status":AICall.Status.QUEUED})
+        if not created:
+           return False 
+        if is_within_ai_call_window():
+            CallLog.objects.create(ai_call=ai_call,event="AI_CALL_TRIGGERED",details="AI interview call triggered automatically",triggered_by=None,reason=(
+                "application was shortlisted and met ai eligible criteria "
+            ))
+            from .tasks import trigger_ai_call_task
+            transaction.on_commit(lambda:trigger_ai_call_task.delay(application.id))
+        else:
+            CallLog.objects.create(ai_call=ai_call,event="AI_CALL_SCHEDULED",details=(
+                    "AI interview call queued for the next "
+                    "permitted call window."),triggered_by=None,reason=(
+                    "Application was eligible, but the current "
+                    "time was outside the permitted call window."))
+            
+            transaction.on_commit(lambda:schedule_ai_call_for_next_window(application.id))
     return True
 
 def is_within_ai_call_window():
@@ -334,17 +346,15 @@ def is_within_ai_call_window():
 def schedule_ai_call_for_next_window(applicatoin_id):
     from .tasks import trigger_ai_call_task
     now=timezone.localtime()
-    start_time=time(9,0)
-    end_time=time(18,0)
-    today_start=now.replace(hour=9,minute=0,microsecond=0)
-    today_end=now.replace(hour=18,minute=0,microsecond=0)
+    today_start=now.replace(hour=9,minute=0,second=0,microsecond=0)
+    today_end=now.replace(hour=18,minute=0,second=0,microsecond=0)
     if now<today_start:
         target_time=today_start
-    elif now>today_end:
+    elif now>=today_end:
         target_time=today_start+timedelta(days=1)
     else:
         trigger_ai_call_task.delay(applicatoin_id)
         return True
-    countdown=int((target_time-now).total_seconds())
+    countdown=max(0,int((target_time-now).total_seconds()))
     trigger_ai_call_task.apply_sync(args=[applicatoin_id],countdown=countdown)
     return True
