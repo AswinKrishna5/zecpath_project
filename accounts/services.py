@@ -12,6 +12,15 @@ from datetime import time,timedelta
 from django.utils import timezone
 
 from django.db import transaction
+import logging
+from html import escape
+
+from django.conf import settings
+from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
+
+from urllib.parse import urlencode
+from twilio.http.http_client import TwilioHttpClient
 
 
 def get_candidate_profile(user,user_id=None):
@@ -358,3 +367,38 @@ def schedule_ai_call_for_next_window(applicatoin_id):
     countdown=max(0,int((target_time-now).total_seconds()))
     trigger_ai_call_task.apply_sync(args=[applicatoin_id],countdown=countdown)
     return True
+
+#day35#....................................
+
+logger = logging.getLogger(__name__)
+def make_twilio_call(to_number,message,voice="alice",language="en-US",):
+    if not settings.TWILIO_ACCOUNT_SID:
+        raise ValueError("twilio account sid is not configured")
+    if not settings.TWILIO_AUTH_TOKEN:
+        raise ValueError("twilio auth token is not configured")
+    if not settings.TWILIO_PHONE_NUMBER:
+        raise ValueError("twilio trial phone number is not configured")
+    if not settings.TWILIO_TWIML_BIN_URL:
+        raise ValueError("twilio twiml bin url is not configured")
+    if not to_number or not to_number.startswith("+"):
+        raise ValueError("the noumber should in internation format, eg +91")
+    if not message or not message.strip():
+        raise ValueError("the message cannot be empty")
+    http_client=TwilioHttpClient(timeout=10)
+    client=Client(settings.TWILIO_ACCOUNT_SID,settings.TWILIO_AUTH_TOKEN,http_client=http_client)
+    
+    try:
+        params = urlencode({"message": message,"voice": voice,"language": language,})
+        voice_url = f"{settings.TWILIO_TWIML_BIN_URL}?{params}"
+        call=client.calls.create(to=to_number,from_=settings.TWILIO_PHONE_NUMBER,url=voice_url)
+        logger.info("twilo call created succesfully.call sid:%s",call.sid)
+        return {"success":True,"call_sid":call.sid,"status":call.status}
+    except TwilioRestException as exc:
+        logger.exception("Twilio rejected the outbound call.code:%s status:%s message:%s",exc.code,exc.status,exc.msg)
+        raise
+
+
+
+
+
+

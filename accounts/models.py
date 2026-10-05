@@ -215,3 +215,9 @@ class CallLog(models.Model):
 
     def __str__(self):
         return f"{self.event}-call{self.ai_call_id}"
+
+
+
+
+
+

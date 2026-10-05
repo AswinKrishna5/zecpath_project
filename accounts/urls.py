@@ -4,7 +4,7 @@ from .views import(SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestV
                    LatestJobListView,ApplyJobView,MyApplicationListView,EmployerApplicationStatusView,EmployerApplicationListView,
                    SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView,AdminEmployerApprovalView,
                    AdminBlockUserView,AdminJobManagementView,AdminPlatformStatisticsView,AdminUserGrowthView,AdminJobActivityView,AdminFlagAccountView,
-                   AdminAuditLogListView,RankedCandidateListView,EmployerOverrideApplicationView)
+                   AdminAuditLogListView,RankedCandidateListView,EmployerOverrideApplicationView,TwilioVoiceView)
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -45,4 +45,5 @@ urlpatterns =[
     path("admin/audit-logs/",AdminAuditLogListView.as_view(),name="admin_audit_logs"),
     path("employer/jobs/<int:job_id>/applications/ranked/",RankedCandidateListView.as_view(),name="ranked_candidates"),
     path("employer/applications/<int:application_id>/override/",EmployerOverrideApplicationView.as_view(),name="employer_override_application"),
+    path("twilio/voice/",TwilioVoiceView.as_view(),name="twilio-voice")
 ]
