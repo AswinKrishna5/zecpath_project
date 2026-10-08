@@ -192,6 +192,7 @@ class AIQuestion(models.Model):
     question_text=models.TextField()
     question_order=models.PositiveIntegerField()
     created_at=models.DateTimeField(auto_now_add=True)
+    question_mapping=models.ForeignKey("JobQuestionMapping",on_delete=models.SET_NULL,null=True,blank=True,related_name="ai_questions")
 
     def __str__(self):
         return f"{self.question_order}-{self.session_id}"
@@ -205,6 +206,35 @@ class AIAnswer(models.Model):
     def __str__(self):
         return f"answer of question {self.question_id}"
 
+class QuestionTemplate(models.Model):
+    class Category(models.TextChoices):
+        INTRODUCTION = "INTRODUCTION", "Introduction"
+        EXPERIENCE = "EXPERIENCE", "Experience"
+        SKILLS = "SKILLS", "Skills"
+        AVAILABILITY = "AVAILABILITY", "Availability"
+        SALARY = "SALARY", "Salary"
+    question_text=models.TextField()
+    category=models.CharField(max_length=20,choices=Category.choices)
+    is_active=models.BooleanField(default=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.category} - {self.question_text[:50]}"
+
+class JobQuestionMapping(models.Model):
+    job=models.ForeignKey(Job,on_delete=models.CASCADE,related_name="job_mappings")
+    question_template=models.ForeignKey(QuestionTemplate,on_delete=models.CASCADE)
+    question_order=models.PositiveBigIntegerField()
+    is_active=models.BooleanField(default=True)
+    depends_on=models.ForeignKey("self",on_delete=models.SET_NULL,null=True,blank=True,related_name="dependent_questions")
+    trigger_answer=models.CharField(max_length=100,blank=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["job", "question_template"],name="unique_job_question_template")]
+        ordering=["question_order"]
+    def __str__(self):
+        return f"{self.job.title} - {self.question_template.question_text[:50]}"
+    
+
 class CallLog(models.Model):
     triggered_by=models.ForeignKey(CustomUser,on_delete=models.SET_NULL,null=True,blank=True,related_name="ai_call_logs")
     reason=models.TextField(null=True,blank=True)
@@ -215,7 +245,6 @@ class CallLog(models.Model):
 
     def __str__(self):
         return f"{self.event}-call{self.ai_call_id}"
-
 
 
 

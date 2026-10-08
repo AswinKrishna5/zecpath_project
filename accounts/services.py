@@ -1,4 +1,4 @@
-from .models import CandidateProfile,EmployerProfile,Application,EmailLog
+from .models import CandidateProfile,EmployerProfile,Application,EmailLog,JobQuestionMapping,QuestionTemplate,AIQuestion
 import re
 import os
 import pdfplumber
@@ -397,8 +397,81 @@ def make_twilio_call(to_number,message,voice="alice",language="en-US",):
         logger.exception("Twilio rejected the outbound call.code:%s status:%s message:%s",exc.code,exc.status,exc.msg)
         raise
 
+#day36.............................
+
+def get_next_question(job,current_question_index=0):
+    mappings=JobQuestionMapping.objects.filter(job=job,is_active=True,question_template__is_active=True).select_related("question_template").order_by("question_order")
+    for mapping in mappings:
+        if mapping.question_order>current_question_index:
+            return mapping.question_template
+    return None
+
+def get_current_question(session):
+    question=session.questions.filter(answer__isnull=True).order_by("question_order").first()
+    return question
+
+def should_ask_follow_up(answer_text):
+    if not answer_text:
+        return False
+    answer=answer_text.lower().strip()
+    positive_answers=[ "yes","yeah","yep","sure","i have","absolutly","i do",]
+    return any(phrase in answer
+               for phrase in positive_answers
+    )
+
+def get_follow_up_question(session,answer_text):
+    answered_question=AIQuestion.objects.filter(session=session,answer__answer_text=answer_text).select_related("question_mapping").first()
+
+    if not answered_question:
+        return None
+    answer = answer_text.lower().strip()
+    next_question=session.questions.filter(question_order__gt=answered_question.question_order,answer__isnull=True).order_by("question_order").first()
+    if not next_question:
+        return None
+    mapping=next_question.question_mapping
+    if not mapping:
+        None
+    if mapping.depends_on_id==answered_question.question_mapping_id:
+            if mapping.trigger_answer.lower() in answer:
+                return next_question
+    return None
+    # if not should_ask_follow_up(answer_text):
+    #     return None
+    # current_question = get_current_question(session)
+    # if not current_question:
+    #     return None
+    # next_question = session.questions.filter(question_order__gt=current_question.question_order,answer__isnull=True
+    # ).order_by("question_order").first()
+    # return next_question
+
+def create_interview_questions(session):
+    existing_questions=session.questions.all().order_by("question_order")
+    if existing_questions.exists():
+        return list(existing_questions)
+    job=session.ai_call.application.job
+    mappings=JobQuestionMapping.objects.filter(job=job,is_active=True,question_template__is_active=True).select_related("question_template").order_by("question_order")
+    questions=[]
+    for mapping in mappings:
+        question=AIQuestion.objects.create(session=session,question_mapping=mapping,question_text=mapping.question_template.question_text,question_order=mapping.question_order)
+        questions.append(question)
+    return questions
 
 
 
+def get_next_interview_question(session,answer_text=None):
+    if answer_text:
+        answered_question=AIQuestion.objects.filter(session=session,answer__answer_text=answer_text).select_related("question_mapping").first()
 
-
+        if not answered_question:
+            return None
+        follow_up=get_follow_up_question(session,answer_text)    
+        if follow_up:
+            return follow_up
+        next_questions=session.questions.filter(question_order__gt=answered_question.question_order,answer__isnull=True).select_related("question_mapping").order_by("question_order")
+        for question in next_questions:
+            mapping = question.question_mapping
+            if mapping and mapping.depends_on_id:
+                continue
+            return question
+        return None
+    return get_current_question(session)
