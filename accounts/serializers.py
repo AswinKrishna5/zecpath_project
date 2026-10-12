@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,AccountFlag,AdminAuditLog
+from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,AccountFlag,AdminAuditLog,AIAnswer
 
 class SignupSerializers(serializers.ModelSerializer):
     class Meta:
@@ -145,3 +145,14 @@ class RankedCandidateSerializer(serializers.ModelSerializer):
     class Meta:
         model=Application
         fields=("id","candidate_name","status","ats_score","skill_match","experience_match","education_match","applied_at",)
+
+#day 37...............
+
+class AIAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=AIAnswer
+        fields=("id","question","answer_text","answered_at","confidence_score","ai_annotations","relevance_score","completeness_score",
+                "keyword_score","final_score",)
+        read_only_fields=("id","question","answered_at","confidence_score","ai_annotations","relevance_score",
+                "completeness_score","keyword_score","final_score",)
+        

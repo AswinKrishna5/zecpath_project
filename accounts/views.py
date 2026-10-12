@@ -2,11 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
-from .serializers import SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer
+from .serializers import (SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,
+                          EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,
+                          AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer,AIAnswerSerializer)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob,AccountFlag,AdminAuditLog
+from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob,AIQuestion,AdminAuditLog,AIAnswer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import IsAdmin,IsEmployer,IsCandidate,IsCandidateOrAdmin,IsEmployerOrAdmin
@@ -15,7 +17,8 @@ from .pagination import CandidatePagination,JobPagination
 
 from django.db.models import Q,Count
 
-from .services import get_candidate_profile,get_employer_profile,parse_resume_structured,calculate_ats_score,override_application_status,send_application_submitted_email,send_shortlisted_email,send_rejected_email
+from .services import (get_candidate_profile,get_employer_profile,parse_resume_structured,calculate_ats_score,override_application_status,
+                       send_application_submitted_email,send_shortlisted_email,send_rejected_email,evaluate_and_save_answer)
 from .workflow import is_valid_transition
 from .tasks import send_application_email_task
 
@@ -762,3 +765,46 @@ class TwilioVoiceView(APIView):
         if not self.is_valid_twilio_request(request):
             return HttpResponse("invalid twilio signature",status=403,)        
         return HttpResponse(self.get_twiml(request),content_type="text/xml")
+
+#day37..................
+
+class SubmitAIAnswerView(APIView):
+    permission_classes=[IsAuthenticated,IsCandidate]
+    def post(self,request,question_id):
+        try:
+            question=AIQuestion.objects.select_related("session","session__ai_call",
+                "session__ai_call__application",
+                "session__ai_call__application__candidate").get(id=question_id,session__ai_call__application__candidate__user=request.user)
+        except AIQuestion.DoesNotExist:
+            return Response({"detail":"interview question not found"},status=status.HTTP_404_NOT_FOUND)
+        if AIAnswer.objects.filter(question=question).exists():
+            return Response({"detail":"this question was alredy answered"},status=status.HTTP_400_BAD_REQUEST)
+        serializer=AIAnswerSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        answer=serializer.save(question=question)
+        mapping=question.question_mapping
+        if mapping and mapping.question_template:
+            expected_keywords=(mapping.question_template.expected_keywords)
+            expected_points=(mapping.question_template.expected_points)
+        else:
+            expected_keywords=[]
+            expected_points=[]
+        try:
+            evaluate_and_save_answer(answer=answer,expected_keywords=expected_keywords,expected_points=expected_points)
+        except Exception:
+            answer.delete()
+            return Response({"detail":"unable to evaluate this answer"},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(AIAnswerSerializer(answer).data,status=status.HTTP_201_CREATED)
+
+class RetrieveAIAnswerScoresView(APIView):
+    permission_classes=[IsAuthenticated,IsCandidate]
+    def get(self,request,question_id):
+        try:
+            answer=AIAnswer.objects.select_related("question","question__session","question__session__ai_call",
+                                    "question__session__ai_call__application",
+                                    "question__session__ai_call__application__candidate").get(question_id=question_id,question__session__ai_call__application__candidate__user=request.user)
+        except AIAnswer.DoesNotExist:
+            return Response({"detail":"answer not found"},status=status.HTTP_404_NOT_FOUND)
+        serializer=AIAnswerSerializer(answer)
+        return Response(serializer.data,status=status.HTTP_200_OK)

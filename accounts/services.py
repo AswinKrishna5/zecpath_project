@@ -475,3 +475,68 @@ def get_next_interview_question(session,answer_text=None):
             return question
         return None
     return get_current_question(session)
+
+
+#day37...............
+
+def calculate_keyword_score(answer_text,expected_keywords):
+    if not answer_text or not expected_keywords:
+        return 0.0
+    answer=answer_text.lower()
+    matched_keywords=[keyword 
+                      for keyword in expected_keywords
+                      if keyword.lower() in answer]
+    score=(len(matched_keywords)/len(expected_keywords))*100
+    return round(score,2)
+
+def calculate_relevance_score(question_text,answer_text):
+    if not question_text or not answer_text:
+        return 0.0
+    question_words={word.strip(".,?!:;()[]{}\"'").lower()
+                    for word in question_text.split()
+                    if len(word.strip(".,?!:;()[]{}\"'"))>2}
+    answer_words={word.strip(".,?!:;()[]{}\"'").lower()
+                  for word in answer_text.split()
+                  if len(word.strip(".,?!:;()[]{}\"'"))>2}
+    if not question_words:
+        return 0.0
+    matched_words=question_words.intersection(answer_words)
+    score=(len(matched_words)/len(question_words))*100
+    return round(score,2)
+
+def calculate_completeness_score(answer_text,expected_points):
+    if not answer_text or not expected_points:
+        return 0.0
+    answer=answer_text.lower()
+    matched_points=[point
+                    for point in expected_points
+                    if point.lower() in answer]
+    score=(len(matched_points)/len(expected_points))*100
+    return round(score,2)
+
+def calculate_final_score(relevence_score,completness_score,keyword_score):
+    scores=[relevence_score,completness_score,keyword_score]
+    if any(score is None for score in scores):
+        raise ValueError("all evaluation score are required")
+    if any(not 0<=score<=100 for score in scores):
+        raise ValueError("score must be between 0 and 100")
+    final_score=(relevence_score*0.30+completness_score*0.40+keyword_score*0.30)
+    return round(final_score,2)
+
+def evaluate_and_save_answer(answer,expected_keywords,expected_points,confidence_score=None,ai_annotations=None):
+    relevence=calculate_relevance_score(answer.question.question_text,answer.answer_text)
+    completeness=calculate_completeness_score(answer.answer_text,expected_points)
+    keyword=calculate_keyword_score(answer.answer_text,expected_keywords)
+    final=calculate_final_score(relevence,completeness,keyword)
+    answer.relevance_score=relevence
+    answer.completeness_score=completeness
+    answer.keyword_score=keyword
+    answer.final_score=final
+    if confidence_score is not None:
+        if not 0<=confidence_score<=100:
+            raise ValueError("must between 0 and 100")
+        answer.confidence_score=confidence_score
+    if ai_annotations is not None:
+        answer.ai_annotations=ai_annotations
+    answer.save(update_fields=["relevance_score","completeness_score","keyword_score","final_score","confidence_score","ai_annotations"])
+    return answer

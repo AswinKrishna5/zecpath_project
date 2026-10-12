@@ -202,6 +202,12 @@ class AIAnswer(models.Model):
     answer_text=models.TextField()
     answered_at=models.DateTimeField(null=True,blank=True)
     created_at=models.DateTimeField(auto_now_add=True)
+    confidence_score=models.FloatField(null=True,blank=True)
+    ai_annotations=models.JSONField(default=dict,blank=True)
+    relevance_score=models.FloatField(null=True,blank=True)
+    completeness_score=models.FloatField(null=True,blank=True)
+    keyword_score=models.FloatField(null=True,blank=True)
+    final_score=models.FloatField(null=True,blank=True)
 
     def __str__(self):
         return f"answer of question {self.question_id}"
@@ -217,6 +223,8 @@ class QuestionTemplate(models.Model):
     category=models.CharField(max_length=20,choices=Category.choices)
     is_active=models.BooleanField(default=True)
     created_at=models.DateTimeField(auto_now_add=True)
+    expected_keywords=models.JSONField(default=list,blank=True)
+    expected_points=models.JSONField(default=list,blank=True) 
 
     def __str__(self):
         return f"{self.category} - {self.question_text[:50]}"
