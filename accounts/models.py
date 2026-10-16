@@ -183,10 +183,27 @@ class AIInterviewSession(models.Model):
     started_at=models.DateTimeField(null=True,blank=True)
     ended_at=models.DateTimeField(null=True,blank=True)
     created_at=models.DateTimeField(auto_now_add=True)
+    scheduled_start=models.DateTimeField(null=True,blank=True)
+    scheduled_end=models.DateTimeField(null=True,blank=True)
 
     def __str__(self):
         return f"interview session {self.id}-{self.status}"
 
+class InterviewAvailability(models.Model):
+    employer=models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="interview_availability")
+    start_time=models.DateTimeField()
+    end_time=models.DateTimeField()
+    is_available=models.BooleanField(default=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.employer.username}: {self.start_time} - {self.end_time}"
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.start_time and self.end_time:
+            if self.start_time>=self.end_time:
+                raise ValidationError("end time must be later than start time")
+            
 class AIQuestion(models.Model):
     session=models.ForeignKey(AIInterviewSession,on_delete=models.CASCADE,related_name="questions")
     question_text=models.TextField()

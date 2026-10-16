@@ -1,0 +1,8 @@
+f"Hello {{candidate_name}},\n\n"
+        "Your AI interview has been scheduled successfully.\n\n"
+        f"Job: {{job_title}}\n"
+        f"Interview Start: {{interview_start}}\n"
+        f"Interview End: {{interview_end}}\n\n"
+        "Please be available at the scheduled time.\n\n"
+        "Regards,\n"
+        "Zecpath ATS Team"

@@ -4,7 +4,8 @@ from .views import(SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestV
                    LatestJobListView,ApplyJobView,MyApplicationListView,EmployerApplicationStatusView,EmployerApplicationListView,
                    SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView,AdminEmployerApprovalView,
                    AdminBlockUserView,AdminJobManagementView,AdminPlatformStatisticsView,AdminUserGrowthView,AdminJobActivityView,AdminFlagAccountView,
-                   AdminAuditLogListView,RankedCandidateListView,EmployerOverrideApplicationView,TwilioVoiceView,SubmitAIAnswerView,RetrieveAIAnswerScoresView)
+                   AdminAuditLogListView,RankedCandidateListView,EmployerOverrideApplicationView,TwilioVoiceView,SubmitAIAnswerView,RetrieveAIAnswerScoresView,
+                   InterviewAvailabilityView,ScheduleAIInterviewView)
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -47,5 +48,7 @@ urlpatterns =[
     path("employer/applications/<int:application_id>/override/",EmployerOverrideApplicationView.as_view(),name="employer_override_application"),
     path("twilio/voice/",TwilioVoiceView.as_view(),name="twilio-voice"),
     path("ai-interview/questions/<int:question_id>/answer/",SubmitAIAnswerView.as_view(),name="submit-ai-answer"),
-    path("ai-interview/questions/<int:question_id>/scores/",RetrieveAIAnswerScoresView.as_view(),name="retrieve-ai-answer-scores")
+    path("ai-interview/questions/<int:question_id>/scores/",RetrieveAIAnswerScoresView.as_view(),name="retrieve-ai-answer-scores"),
+    path("interview-availability/",InterviewAvailabilityView.as_view(),name="interview-availability",),
+    path( "applications/<int:application_id>/schedule-interview/",ScheduleAIInterviewView.as_view(),name="schedule-ai-interview",),
 ]

@@ -1,5 +1,4 @@
-from .models import CandidateProfile,EmployerProfile,Application,EmailLog,JobQuestionMapping,QuestionTemplate,AIQuestion
-import re
+from .models import CandidateProfile,EmployerProfile,Application,EmailLog,JobQuestionMapping,QuestionTemplate,AIQuestion,InterviewAvailability
 import os
 import pdfplumber
 from docx import Document
@@ -21,6 +20,8 @@ from twilio.base.exceptions import TwilioRestException
 
 from urllib.parse import urlencode
 from twilio.http.http_client import TwilioHttpClient
+
+from django.db.models import Q
 
 
 def get_candidate_profile(user,user_id=None):
@@ -311,6 +312,22 @@ def send_email_with_retry(application,subject,message,recipient_email,max_retrie
                 return False
     return False
 
+#day38.........................
+
+def send_interview_scheduled_email(session):
+    application=session.ai_call.application
+    candidate=application.candidate.user
+    recipient_email=candidate.email
+    candidate_name=application.candidate.full_name
+    job_title=application.job.title
+    interview_start=session.scheduled_start
+    interview_end=session.scheduled_end
+    message=render_to_string("emails/interview_scheduled.txt",{"candidate_name":candidate_name,"job_title":job_title,
+                                            "interview_start":interview_start,"interview_end":interview_end})
+    return send_email_with_retry(application=application,subject="AI Interview Scheduled - Zecpath ATS",message=message,recipient_email=recipient_email)
+
+#.....................
+
 def is_ai_call_eligible(application,threshold=80):
     if application.ats_score is None:
         return False
@@ -540,3 +557,28 @@ def evaluate_and_save_answer(answer,expected_keywords,expected_points,confidence
         answer.ai_annotations=ai_annotations
     answer.save(update_fields=["relevance_score","completeness_score","keyword_score","final_score","confidence_score","ai_annotations"])
     return answer
+
+#day38..............
+
+
+def has_interview_conflict(employer, scheduled_start, scheduled_end,exclude_session_id=None):
+    from .models import AIInterviewSession
+
+    conflicts=AIInterviewSession.objects.filter(ai_call__application__job__employer=employer.employer_profile,status__in=[AIInterviewSession.Status.SCHEDULED,
+            AIInterviewSession.Status.IN_PROGRESS,],scheduled_start__lt=scheduled_end,scheduled_end__gt=scheduled_start,
+    )
+    if exclude_session_id is not None:
+        conflicts=conflicts.exclude(id=exclude_session_id)
+    return conflicts.exists()
+
+def is_within_employer_availability(employer,scheduled_start,scheduled_end):
+    return InterviewAvailability.objects.filter(employer=employer,is_available=True,start_time__lte=scheduled_start,end_time__gte=scheduled_end).exists()
+
+def validate_interview_schedule(employer,scheduled_start,scheduled_end,exclude_session_id=None):
+    if scheduled_start>=scheduled_end:
+        return False,"end time must be later than start time"
+    if not is_within_employer_availability(employer,scheduled_start,scheduled_end):
+        return False,"interview is outside the employer availability"
+    if has_interview_conflict(employer,scheduled_start,scheduled_end,exclude_session_id=exclude_session_id):
+        return False,"another interview overlaps this time"
+    return True,"interview schedule is valid"

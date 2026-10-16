@@ -1,14 +1,14 @@
-from django.shortcuts import render
 from django.http import HttpResponse
 from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
 from .serializers import (SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,
                           EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,
-                          AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer,AIAnswerSerializer)
+                          AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer,AIAnswerSerializer,InterviewAvailabilitySerializer)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from .models import CustomUser,CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob,AIQuestion,AdminAuditLog,AIAnswer
+from .models import (CustomUser,CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob,AIQuestion,AdminAuditLog,
+                     AIAnswer,InterviewAvailability,AICall,AIInterviewSession)
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import IsAdmin,IsEmployer,IsCandidate,IsCandidateOrAdmin,IsEmployerOrAdmin
@@ -18,12 +18,20 @@ from .pagination import CandidatePagination,JobPagination
 from django.db.models import Q,Count
 
 from .services import (get_candidate_profile,get_employer_profile,parse_resume_structured,calculate_ats_score,override_application_status,
-                       send_application_submitted_email,send_shortlisted_email,send_rejected_email,evaluate_and_save_answer)
+                       send_application_submitted_email,send_shortlisted_email,send_rejected_email,evaluate_and_save_answer,
+                       validate_interview_schedule,send_interview_scheduled_email)
 from .workflow import is_valid_transition
 from .tasks import send_application_email_task
 
 from twilio.request_validator import RequestValidator  
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -808,3 +816,62 @@ class RetrieveAIAnswerScoresView(APIView):
             return Response({"detail":"answer not found"},status=status.HTTP_404_NOT_FOUND)
         serializer=AIAnswerSerializer(answer)
         return Response(serializer.data,status=status.HTTP_200_OK)
+
+#day 38 ..................
+
+class InterviewAvailabilityView(APIView):
+    permission_classes=[IsAuthenticated,IsEmployer]
+    def get(self,request):
+        availability=InterviewAvailability.objects.filter(employer=request.user).order_by("start_time")
+        serializer=InterviewAvailabilitySerializer(availability,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    def post(self,request):
+        serializer=InterviewAvailabilitySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(employer=request.user)
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+class ScheduleAIInterviewView(APIView):
+    logger.warning("ScheduleAIInterviewView.post was reached")
+    permission_classes=[IsEmployer,IsAuthenticated]
+    def post(self,request,application_id):
+        scheduled_start=request.data.get("scheduled_start")
+        scheduled_end=request.data.get("scheduled_end")
+        if not scheduled_start or not scheduled_end:
+            return Response({"error":"start and end is required"},status=status.HTTP_400_BAD_REQUEST)
+        scheduled_start=parse_datetime(scheduled_start)
+        scheduled_end=parse_datetime(scheduled_end)
+        if not scheduled_start or not scheduled_end:
+            return Response({"error":"provide standered iso date time values"},status=status.HTTP_400_BAD_REQUEST)
+        if timezone.is_naive(scheduled_start) or timezone.is_naive(scheduled_end):
+            return Response({"error":"date time must include a timezone"},status=status.HTTP_400_BAD_REQUEST)
+        if scheduled_start<=timezone.now():
+            return Response({"error":"the interview must be in future"},status=status.HTTP_400_BAD_REQUEST)
+        application=get_object_or_404(Application.objects.select_related("job__employer__user"),id=application_id,job__employer__user=request.user)
+        ai_call,_=AICall.objects.get_or_create(application=application)
+        session=AIInterviewSession.objects.filter(ai_call=ai_call).first()
+        if session and session.status in [AIInterviewSession.Status.IN_PROGRESS,AIInterviewSession.Status.COMPLETED]:
+            return Response({"error":"this interview cannot be rescheduled"},status=status.HTTP_400_BAD_REQUEST)
+        is_valid,message=validate_interview_schedule(application.job.employer.user,scheduled_start,scheduled_end,exclude_session_id=session.id if session else None)
+
+        if not is_valid:
+            return Response({"error":message},status=status.HTTP_400_BAD_REQUEST)
+        if session is None:
+            session=AIInterviewSession.objects.create(ai_call=ai_call,scheduled_start=scheduled_start,scheduled_end=scheduled_end,
+                                                      status=AIInterviewSession.Status.SCHEDULED)
+            response_status=status.HTTP_201_CREATED
+        else:
+            session.scheduled_start=scheduled_start
+            session.scheduled_end=scheduled_end
+            session.status=AIInterviewSession.Status.SCHEDULED
+            session.save(update_fields=["scheduled_start","scheduled_end","status"])
+            response_status=status.HTTP_200_OK
+        send_interview_scheduled_email(session)
+        return Response({"message":"interview scheduled succesfully",
+                         "application_id":application.id,
+                         "scheduled_start":session.scheduled_start,
+                         "scheduled_end":session.scheduled_end,
+                         "status":session.status},
+                         status=response_status)
+    
