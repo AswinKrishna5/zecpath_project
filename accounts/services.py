@@ -1,4 +1,5 @@
-from .models import CandidateProfile,EmployerProfile,Application,EmailLog,JobQuestionMapping,QuestionTemplate,AIQuestion,InterviewAvailability
+from .models import (CandidateProfile,EmployerProfile,Application,EmailLog,JobQuestionMapping,
+                     QuestionTemplate,AIQuestion,InterviewAvailability,InterviewReminder)
 import os
 import pdfplumber
 from docx import Document
@@ -388,7 +389,7 @@ def schedule_ai_call_for_next_window(applicatoin_id):
 #day35#....................................
 
 logger = logging.getLogger(__name__)
-def make_twilio_call(to_number,message,voice="alice",language="en-US",):
+def make_twilio_call(to_number,message,voice="alice",language="en-US",status_callback=None):
     if not settings.TWILIO_ACCOUNT_SID:
         raise ValueError("twilio account sid is not configured")
     if not settings.TWILIO_AUTH_TOKEN:
@@ -407,13 +408,17 @@ def make_twilio_call(to_number,message,voice="alice",language="en-US",):
     try:
         params = urlencode({"message": message,"voice": voice,"language": language,})
         voice_url = f"{settings.TWILIO_TWIML_BIN_URL}?{params}"
-        call=client.calls.create(to=to_number,from_=settings.TWILIO_PHONE_NUMBER,url=voice_url)
+        call_options={"to": to_number,"from_": settings.TWILIO_PHONE_NUMBER,"url": voice_url,"status_callback_event": [
+                "initiated","ringing","answered","completed",],}
+        if status_callback:
+            call_options["status_callback"] = status_callback
+        call=client.calls.create(**call_options)
         logger.info("twilo call created succesfully.call sid:%s",call.sid)
         return {"success":True,"call_sid":call.sid,"status":call.status}
     except TwilioRestException as exc:
         logger.exception("Twilio rejected the outbound call.code:%s status:%s message:%s",exc.code,exc.status,exc.msg)
         raise
-
+    
 #day36.............................
 
 def get_next_question(job,current_question_index=0):
@@ -582,3 +587,35 @@ def validate_interview_schedule(employer,scheduled_start,scheduled_end,exclude_s
     if has_interview_conflict(employer,scheduled_start,scheduled_end,exclude_session_id=exclude_session_id):
         return False,"another interview overlaps this time"
     return True,"interview schedule is valid"
+
+#day39...................
+
+def create_interview_reminders(session):
+    if not session.scheduled_start:
+        return 
+    reminder_stages=[(InterviewReminder.ReminderType.ONE_DAY,timedelta(hours=24)),
+                     (InterviewReminder.ReminderType.ONE_HOUR,timedelta(hours=1))]
+    for reminder_type,time_before in reminder_stages:
+        InterviewReminder.objects.update_or_create(session=session,reminder_type=reminder_type,defaults=
+                                                   {"scheduled_for":session.scheduled_start-time_before,
+                                                    "status":InterviewReminder.Status.PENDING,"voice_status":InterviewReminder.Status.PENDING,
+                                                    "attempts":0,"voice_attempts":0,"sent_at":None,"voice_sent_at":None,"last_error":"","voice_last_error":""})
+
+def send_interview_reminder_email(reminder):
+    session=reminder.session
+    application=session.ai_call.application
+    candidate=application.candidate
+    job=application.job
+    candidate_email=candidate.user.email
+    if not candidate_email:
+        raise ValueError("candidate email is missing")
+    if reminder.reminder_type=="ONE_DAY":
+        reminder_text="in 24 hours"
+    elif reminder.reminder_type=="ONE_HOUR":
+        reminder_text="in 1 hour"
+    else:
+        raise ValueError("unsupported reminder type")
+    subject=f"interview reminder:{job.title}"
+    message=render_to_string("emails/interview_reminder.txt",{"candidate_name":candidate.full_name,"job_title":job.title,"reminder_text":reminder_text})
+    send_mail(subject=subject,message=message,from_email=settings.DEFAULT_FROM_EMAIL,recipient_list=[candidate_email],fail_silently=False)
+    return candidate_email

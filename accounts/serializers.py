@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (CustomUser,CandidateProfile,EmployerProfile,Job,Application,SavedJob,ApplicationAuditLog,
-                     AccountFlag,AdminAuditLog,AIAnswer,InterviewAvailability)
+                     AccountFlag,AdminAuditLog,AIAnswer,InterviewAvailability,InterviewReminder)
 
 class SignupSerializers(serializers.ModelSerializer):
     class Meta:
@@ -84,7 +84,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
 class EmployerApplicationSerializer(serializers.ModelSerializer):
     candidate_name=serializers.CharField(source="candidate.full_name",read_only=True)
     candidate_skills=serializers.CharField(source="candidate.skills",read_only=True)
-    candidate_education=serializers.CharField(source="candidate.eduacation",read_only=True)
+    candidate_education=serializers.CharField(source="candidate.education",read_only=True)
     candidate_experience=serializers.CharField(source="candidate.experience",read_only=True)
     expected_salary=serializers.DecimalField(source="candidate.expected_salary",max_digits=10,decimal_places=2,read_only=True)
     resume=serializers.FileField(source="resume_snapshot",read_only=True)
@@ -160,3 +160,11 @@ class InterviewAvailabilitySerializer(serializers.ModelSerializer):
         if start_time and end_time and end_time<=start_time:
             raise serializers.ValidationError({"end_time":"end time must be later than start time"})
         return attrs
+
+#day39.............
+
+class InterviewReminderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=InterviewReminder
+        fields=["id","session","reminder_type","scheduled_for","status","voice_status","attempts","voice_attempts","sent_at","voice_sent_at","last_error","voice_last_error","created_at",]
+        read_only_fields=fields

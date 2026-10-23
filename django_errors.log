@@ -2741,3 +2741,781 @@ Traceback (most recent call last):
               ^^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'Job' object has no attribute 'job_title'. Did you mean: 'job_type'?
 "POST /api/auth/applications/6/schedule-interview/ HTTP/1.1" 500 104201
+Internal Server Error: /api/auth/applications/6/schedule-interview/
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 948, in get_or_create
+    return self.get(**kwargs), False
+           ~~~~~~~~^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+accounts.models.InterviewReminder.DoesNotExist: InterviewReminder matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\sqlite3\base.py", line 360, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: accounts_interviewreminder.created_at
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\accounts\views.py", line 871, in post
+    create_interview_reminders(session)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 595, in create_interview_reminders
+    InterviewReminder.objects.update_or_create(session=session,reminder_type=reminder_type,defaults=
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                               {"scheduled_for":session.scheduled_start-time_before,
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                "status":InterviewReminder.Status.PENDING,
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                "attempts":0,"sent_at":None,"last_error":""})
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 990, in update_or_create
+    obj, created = self.select_for_update().get_or_create(
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        create_defaults, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 955, in get_or_create
+    return self.create(**params), True
+           ~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 665, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\sqlite3\base.py", line 360, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: accounts_interviewreminder.created_at
+"POST /api/auth/applications/6/schedule-interview/ HTTP/1.1" 500 219157
+Internal Server Error: /api/auth/applications/6/schedule-interview/
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 948, in get_or_create
+    return self.get(**kwargs), False
+           ~~~~~~~~^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+accounts.models.InterviewReminder.DoesNotExist: InterviewReminder matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\sqlite3\base.py", line 360, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+sqlite3.IntegrityError: NOT NULL constraint failed: accounts_interviewreminder.created_at
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\accounts\views.py", line 871, in post
+    create_interview_reminders(session)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 595, in create_interview_reminders
+    InterviewReminder.objects.update_or_create(session=session,reminder_type=reminder_type,defaults=
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                               {"scheduled_for":session.scheduled_start-time_before,
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                "status":InterviewReminder.Status.PENDING,
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                "attempts":0,"sent_at":None,"last_error":""})
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 990, in update_or_create
+    obj, created = self.select_for_update().get_or_create(
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        create_defaults, **kwargs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 955, in get_or_create
+    return self.create(**params), True
+           ~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 665, in create
+    obj.save(force_insert=True, using=self.db)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+    ~~~~~~~~~~~~~~^
+        using=using,
+        ^^^^^^^^^^^^
+    ...<2 lines>...
+        update_fields=update_fields,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
+    updated = self._save_table(
+        raw,
+    ...<4 lines>...
+        update_fields,
+    )
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
+    results = self._do_insert(
+        cls._base_manager, using, fields, returning_fields, raw
+    )
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
+    return manager._insert(
+           ~~~~~~~~~~~~~~~^
+        [self],
+        ^^^^^^^
+    ...<3 lines>...
+        raw=raw,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        sql, params, many=False, executor=self._execute
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\backends\sqlite3\base.py", line 360, in execute
+    return super().execute(query, params)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+django.db.utils.IntegrityError: NOT NULL constraint failed: accounts_interviewreminder.created_at
+"POST /api/auth/applications/6/schedule-interview/ HTTP/1.1" 500 219157
+Internal Server Error: /api/auth/interview-reminders/
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\accounts\views.py", line 885, in get
+    reminders=InterviewReminder.objects.filter(session__ai_call__application__job__employer=user)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 1495, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 1513, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 1523, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\query.py", line 1648, in add_q
+    clause, _ = self._add_q(q_object, can_reuse)
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\query.py", line 1680, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ~~~~~~~~~~~~~~~~~^
+        child,
+        ^^^^^^
+    ...<7 lines>...
+        update_join_types=update_join_types,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\query.py", line 1565, in build_filter
+    self.check_related_objects(join_info.final_field, value, join_info.opts)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\query.py", line 1374, in check_related_objects
+    self.check_query_object_type(value, opts, field)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\sql\query.py", line 1351, in check_query_object_type
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: Cannot query "employer4": Must be "EmployerProfile" instance.
+"GET /api/auth/interview-reminders/ HTTP/1.1" 500 145880
+Internal Server Error: /api/auth/interview-reminders/
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\accounts\views.py", line 884, in get
+    employer=EmployerProfile.objects.get(id=user)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+accounts.models.EmployerProfile.DoesNotExist: EmployerProfile matching query does not exist.
+"GET /api/auth/interview-reminders/ HTTP/1.1" 500 106756
+Internal Server Error: /api/auth/interview-reminders/
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\accounts\views.py", line 885, in get
+    if user.role=="EMPLOYER":
+       ^^^^^^^^^
+AttributeError: 'int' object has no attribute 'role'
+"GET /api/auth/interview-reminders/ HTTP/1.1" 500 98108
+Internal Server Error: /api/auth/interview-reminders/
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\django\views\generic\base.py", line 105, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\rest_framework\views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\divya\Desktop\zecpath\accounts\views.py", line 885, in get
+    if user.role=="EMPLOYER":
+       ^^^^^^^^^
+AttributeError: 'int' object has no attribute 'role'
+"GET /api/auth/interview-reminders/ HTTP/1.1" 500 98108
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+Method Not Allowed (GET): /api/auth/twilio/call-status/
+"GET /api/auth/twilio/call-status/ HTTP/1.1" 405 0
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+Forbidden: /api/auth/twilio/voice/
+"POST /api/auth/twilio/voice/?message=Hello%20candidate%20six.%20This%20is%20an%20automated%20interview%20reminder%20from%20backend%20Developer.%20Your%20interview%20is%20scheduled%20for%2020%20October%202026%20at%2010:30%20AM.%20Your%20interview%20is%20in%201%20hour%20from%20now.%20Please%20be%20prepared.%20Thank%20you.&voice=alice&language=en-US HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Forbidden: /api/auth/twilio/call-status/
+"POST /api/auth/twilio/call-status/ HTTP/1.1" 403 24
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Twilio rejected the outbound call.code:0 status:400 message:Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+Traceback (most recent call last):
+  File "C:\Users\divya\Desktop\zecpath\accounts\services.py", line 415, in make_twilio_call
+    call=client.calls.create(**call_options)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1271, in create
+    payload, _, _ = self._create(
+                    ~~~~~~~~~~~~^
+        to=to,
+        ^^^^^^
+    ...<36 lines>...
+        application_sid=application_sid,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\rest\api\v2010\account\call\__init__.py", line 1182, in _create
+    return self._version.create_with_response_info(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        method="POST", uri=self._uri, data=data, headers=headers
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 867, in create_with_response_info
+    payload = self._parse_create(method, uri, response)
+  File "C:\Users\divya\Desktop\zecpath\env\Lib\site-packages\twilio\base\version.py", line 778, in _parse_create
+    raise self.exception(method, uri, response, "Unable to create record")
+twilio.base.exceptions.TwilioRestException: HTTP 400 error: Unable to create record: Invalid or disallowed parameters provided - trial accounts have limited parameter access, upgrade your account to unlock full functionality
+ScheduleAIInterviewView.post was reached
+ScheduleAIInterviewView.post was reached
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Configured callback URL: https://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Signature validation passed: True
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Configured callback URL: https://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Signature validation passed: True
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Configured callback URL: https://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Signature validation passed: True
+Forbidden: /api/auth/twilio/voice/
+"POST /api/auth/twilio/voice/?message=Hello%20candidate%20six.%20This%20is%20an%20automated%20interview%20reminder%20from%20backend%20Developer.%20Your%20interview%20is%20scheduled%20for%2020%20October%202026%20at%2010:30%20AM.%20Your%20interview%20is%20in%201%20hour%20from%20now.%20Please%20be%20prepared.%20Thank%20you.&voice=alice&language=en-US HTTP/1.1" 403 24
+Callback URL: http://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Forwarded host: displease-request-vividness.ngrok-free.dev
+Twilio signature present: True
+Configured callback URL: https://displease-request-vividness.ngrok-free.dev/api/auth/twilio/call-status/
+Signature validation passed: True

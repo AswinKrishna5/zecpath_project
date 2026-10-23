@@ -271,7 +271,41 @@ class CallLog(models.Model):
     def __str__(self):
         return f"{self.event}-call{self.ai_call_id}"
 
+#day 39..............
 
+class InterviewReminder(models.Model):
+    class ReminderType(models.TextChoices):
+        ONE_DAY="ONE_DAY", "24 hours before"
+        ONE_HOUR = "ONE_HOUR", "1 hour before"
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        PROCESSING="PROCESSING","processing"
+        SENT = "SENT", "Sent"
+        FAILED = "FAILED", "Failed"
+    class VoiceStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        PROCESSING = "PROCESSING", "Processing"
+        QUEUED = "QUEUED", "Queued"
+        IN_PROGRESS = "IN_PROGRESS", "In progress"
+        COMPLETED = "COMPLETED", "Completed"
+        NO_ANSWER = "NO_ANSWER", "No answer"
+        FAILED = "FAILED", "Failed"
+    session=models.ForeignKey(AIInterviewSession,on_delete=models.CASCADE,related_name="reminders")
+    reminder_type=models.CharField(max_length=20,choices=ReminderType.choices)
+    scheduled_for=models.DateTimeField(db_index=True)
+    status=models.CharField(max_length=20,choices=Status.choices,default=Status.PENDING,db_index=True)
+    voice_status=models.CharField(max_length=20,choices=VoiceStatus.choices,default=VoiceStatus.PENDING)
+    attempts=models.PositiveSmallIntegerField(default=0)
+    voice_attempts=models.PositiveSmallIntegerField(default=0)
+    sent_at=models.DateTimeField(null=True,blank=True)
+    voice_sent_at=models.DateTimeField(null=True,blank=True)
+    last_error=models.TextField(blank=True)
+    voice_last_error=models.TextField(blank=True)
+    voice_call_sid = models.CharField(max_length=34,blank=True,db_index=True,)
+    created_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["session", "reminder_type"],name="unique_interview_reminder_stage",)]
+        indexes = [models.Index(fields=["status", "scheduled_for"]),models.Index(fields=["voice_status", "scheduled_for"]),]
 
-
-
+    def __str__(self):
+        return f"{self.session_id} - {self.reminder_type} - {self.status}"

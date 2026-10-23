@@ -5,7 +5,7 @@ from .views import(SignupView,LogoutView,ProfileView,AdminTestView,EmployerTestV
                    SavedJobListView,RecommendedJobListView,ApplicationTimelineView,ApplicationStatusNotificationView,AdminEmployerApprovalView,
                    AdminBlockUserView,AdminJobManagementView,AdminPlatformStatisticsView,AdminUserGrowthView,AdminJobActivityView,AdminFlagAccountView,
                    AdminAuditLogListView,RankedCandidateListView,EmployerOverrideApplicationView,TwilioVoiceView,SubmitAIAnswerView,RetrieveAIAnswerScoresView,
-                   InterviewAvailabilityView,ScheduleAIInterviewView)
+                   InterviewAvailabilityView,ScheduleAIInterviewView,InterviewReminderListAPIView,TwilioCallStatusCallbackView)
 
 from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 
@@ -50,5 +50,7 @@ urlpatterns =[
     path("ai-interview/questions/<int:question_id>/answer/",SubmitAIAnswerView.as_view(),name="submit-ai-answer"),
     path("ai-interview/questions/<int:question_id>/scores/",RetrieveAIAnswerScoresView.as_view(),name="retrieve-ai-answer-scores"),
     path("interview-availability/",InterviewAvailabilityView.as_view(),name="interview-availability",),
-    path( "applications/<int:application_id>/schedule-interview/",ScheduleAIInterviewView.as_view(),name="schedule-ai-interview",),
+    path("applications/<int:application_id>/schedule-interview/",ScheduleAIInterviewView.as_view(),name="schedule-ai-interview",),
+    path("interview-reminders/",InterviewReminderListAPIView.as_view(),name="interview-reminders"),
+    path("twilio/call-status/",TwilioCallStatusCallbackView.as_view(),name="twilio-call-status",),
 ]

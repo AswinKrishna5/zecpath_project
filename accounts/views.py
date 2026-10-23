@@ -3,12 +3,13 @@ from rest_framework import generics,status
 from rest_framework.permissions import AllowAny
 from .serializers import (SignupSerializers,CandidateProfileSerializer,EmployerProfileSerializer,JobSerializer,ApplicationSerializer,
                           EmployerApplicationSerializer,SavedJobSerializer,ApplicationTimelineSerializer,ApplicationStatusNotificationSerializer,
-                          AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer,AIAnswerSerializer,InterviewAvailabilitySerializer)
+                          AccountFlagSerializer,AdminAuditLogSerializer,RankedCandidateSerializer,AIAnswerSerializer,InterviewAvailabilitySerializer,
+                          InterviewReminderSerializer)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from .models import (CustomUser,CandidateProfile,EmployerProfile,Job,Application,ApplicationAuditLog,SavedJob,AIQuestion,AdminAuditLog,
-                     AIAnswer,InterviewAvailability,AICall,AIInterviewSession)
+                     AIAnswer,InterviewAvailability,AICall,AIInterviewSession,InterviewReminder)
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import IsAdmin,IsEmployer,IsCandidate,IsCandidateOrAdmin,IsEmployerOrAdmin
@@ -19,7 +20,7 @@ from django.db.models import Q,Count
 
 from .services import (get_candidate_profile,get_employer_profile,parse_resume_structured,calculate_ats_score,override_application_status,
                        send_application_submitted_email,send_shortlisted_email,send_rejected_email,evaluate_and_save_answer,
-                       validate_interview_schedule,send_interview_scheduled_email)
+                       validate_interview_schedule,send_interview_scheduled_email,create_interview_reminders)
 from .workflow import is_valid_transition
 from .tasks import send_application_email_task
 
@@ -868,10 +869,109 @@ class ScheduleAIInterviewView(APIView):
             session.save(update_fields=["scheduled_start","scheduled_end","status"])
             response_status=status.HTTP_200_OK
         send_interview_scheduled_email(session)
+        create_interview_reminders(session)
         return Response({"message":"interview scheduled succesfully",
                          "application_id":application.id,
                          "scheduled_start":session.scheduled_start,
                          "scheduled_end":session.scheduled_end,
                          "status":session.status},
                          status=response_status)
-    
+
+class InterviewReminderListAPIView(APIView):
+    permission_classes=[IsAuthenticated]
+    def get(self,request):
+        user=request.user
+        if user.role=="EMPLOYER":
+            try:
+                 employer=EmployerProfile.objects.get(user_id=user.id,is_deleted=False)
+            except EmployerProfile.DoesNotExist:
+                return Response({"error ":"employer profile not found"},status=status.HTTP_404_NOT_FOUND)
+            reminders=InterviewReminder.objects.filter(session__ai_call__application__job__employer=employer)
+        elif user.role=="ADMIN":
+            reminders=InterviewReminder.objects.all()
+        else:
+            return Response({"errors":"you do not have permission to view these reminders"},status=status.HTTP_403_FORBIDDEN)
+        serializer=InterviewReminderSerializer(reminders.order_by("-scheduled_for"),many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+#day39............
+
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TwilioCallStatusCallbackView(View):
+    def post(self, request, *args, **kwargs):
+        # Validate that the request genuinely came from Twilio.
+        validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
+        signature = request.META.get("HTTP_X_TWILIO_SIGNATURE", "")
+        logger = logging.getLogger(__name__)
+
+        logger.warning("Callback URL: %s", request.build_absolute_uri())
+        logger.warning(
+        "Forwarded host: %s",
+        request.META.get("HTTP_X_FORWARDED_HOST"),
+)
+        logger.warning(
+        "Twilio signature present: %s",
+            bool(request.META.get("HTTP_X_TWILIO_SIGNATURE")),
+        )
+        callback_url = settings.TWILIO_STATUS_CALLBACK_URL
+
+        is_valid = validator.validate(
+        callback_url,
+        request.POST,
+        signature,
+        )
+        logger.warning("Configured callback URL: %s", callback_url)
+        logger.warning("Signature validation passed: %s", is_valid)
+
+        if not is_valid:
+            return HttpResponse("Invalid Twilio signature", status=403)
+
+        call_sid = request.POST.get("CallSid")
+        call_status = request.POST.get("CallStatus", "").lower()
+
+        if not call_sid:
+            return HttpResponse("Missing CallSid", status=400)
+
+        reminder = InterviewReminder.objects.filter(
+            voice_call_sid=call_sid
+        ).first()
+
+        if reminder is None:
+            return HttpResponse("Reminder not found", status=404)
+
+        status_mapping = {
+            "queued": InterviewReminder.VoiceStatus.QUEUED,
+            "initiated": InterviewReminder.VoiceStatus.QUEUED,
+            "ringing": InterviewReminder.VoiceStatus.QUEUED,
+            "answered": InterviewReminder.VoiceStatus.IN_PROGRESS,
+            "in-progress": InterviewReminder.VoiceStatus.IN_PROGRESS,
+            "completed": InterviewReminder.VoiceStatus.COMPLETED,
+            "no-answer": InterviewReminder.VoiceStatus.NO_ANSWER,
+            "busy": InterviewReminder.VoiceStatus.FAILED,
+            "failed": InterviewReminder.VoiceStatus.FAILED,
+            "canceled": InterviewReminder.VoiceStatus.FAILED,
+        }
+
+        new_status = status_mapping.get(call_status)
+
+        if new_status is None:
+            return HttpResponse("Unknown call status", status=400)
+
+        reminder.voice_status = new_status
+
+        if new_status == InterviewReminder.VoiceStatus.FAILED:
+            reminder.voice_last_error = f"Twilio call status: {call_status}"
+        elif new_status == InterviewReminder.VoiceStatus.NO_ANSWER:
+            reminder.voice_last_error = "The call was not answered."
+        else:
+            reminder.voice_last_error = ""
+
+        reminder.save(
+            update_fields=["voice_status", "voice_last_error"]
+        )
+
+        return HttpResponse("Call status updated", status=200)

@@ -1,0 +1,9 @@
+Hello {{ candidate_name }},
+
+This is a reminder that your interview for {{ job_title }}
+is scheduled to begin {{ reminder_text }}.
+
+Please be ready at your scheduled interview time.
+
+Regards,
+Zecpath ATS Team
